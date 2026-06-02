@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Auth helper
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Products: Public read, Admin write
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Orders: Public create, Admin read/write/delete
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read, update, delete: if isAuthenticated();
+    }
+
+    // Customers: Admin only
+    match /customers/{customerId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Payment Config: Public read, Admin write
+    match /paymentConfig/{configId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Settings: Admin only
+    match /settings/{settingId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

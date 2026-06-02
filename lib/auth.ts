@@ -1,0 +1,63 @@
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  setPersistence,
+  browserLocalPersistence,
+  onAuthStateChanged as firebaseOnAuthStateChanged,
+  User,
+} from 'firebase/auth';
+import bcrypt from 'bcryptjs';
+import { auth } from '@/lib/firebase';
+
+const ADMIN_EMAIL = 'admin@pempekdomino.internal';
+
+/**
+ * Login admin with username + plaintext password.
+ * 1. Validates username against env
+ * 2. bcrypt-verifies password against stored hash
+ * 3. Signs in with Firebase Auth
+ */
+export async function loginAdmin(
+  username: string,
+  password: string
+): Promise<void> {
+  const expectedUsername = process.env.NEXT_PUBLIC_ADMIN_USERNAME || 'yangpunyapempekdomino';
+  const passwordHash = process.env.NEXT_PUBLIC_ADMIN_PASSWORD_HASH || '';
+
+  if (username !== expectedUsername) {
+    throw new Error('Username atau password salah.');
+  }
+
+  if (passwordHash) {
+    const valid = await bcrypt.compare(password, passwordHash);
+    if (!valid) {
+      throw new Error('Username atau password salah.');
+    }
+  }
+
+  await setPersistence(auth, browserLocalPersistence);
+  await signInWithEmailAndPassword(auth, ADMIN_EMAIL, password);
+}
+
+/**
+ * Sign out the current admin session.
+ */
+export async function logoutAdmin(): Promise<void> {
+  await signOut(auth);
+}
+
+/**
+ * Get the current authenticated user (synchronous snapshot).
+ */
+export function getCurrentUser(): User | null {
+  return auth.currentUser;
+}
+
+/**
+ * Subscribe to auth state changes.
+ */
+export function onAuthStateChanged(
+  callback: (user: User | null) => void
+): () => void {
+  return firebaseOnAuthStateChanged(auth, callback);
+}
