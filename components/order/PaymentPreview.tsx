@@ -13,17 +13,31 @@ interface PaymentPreviewProps {
 export function PaymentPreview({ method, config }: PaymentPreviewProps) {
   if (!config) return null;
 
-  if (method === 'qris') {
+  // Find the configured method, or fallback to default structure
+  const activeMethod = config.methods?.find((m) => m.id === method) || {
+    id: method,
+    methodType: method as 'qris' | 'dana' | 'transfer',
+    name: method === 'qris' ? 'QRIS' : method === 'dana' ? 'Dana' : 'Transfer Bank',
+    provider: method === 'qris' ? 'QRIS' : method === 'dana' ? 'Dana' : config.bankName,
+    accountNumber: method === 'qris' ? config.qrisImageUrl : method === 'dana' ? config.danaNumber : config.bankAccountNumber,
+    accountName: method === 'transfer' ? config.bankAccountName : undefined,
+    isActive: true,
+  };
+
+  if (!activeMethod.isActive) return null;
+
+  if (activeMethod.methodType === 'qris') {
+    const qrisUrl = activeMethod.accountNumber || config.qrisImageUrl;
     return (
       <Card className="mt-3 border border-secondary/30">
         <CardBody className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-2 text-brown font-semibold">
             <QrCode size={18} className="text-primary" />
-            Bayar via QRIS
+            {activeMethod.name}
           </div>
-          {config.qrisImageUrl ? (
+          {qrisUrl ? (
             <div className="relative w-48 h-48 rounded-input overflow-hidden shadow-card">
-              <Image src={config.qrisImageUrl} alt="QRIS Code" fill className="object-contain" />
+              <Image src={qrisUrl} alt={`${activeMethod.provider} Code`} fill className="object-contain" />
             </div>
           ) : (
             <div className="w-48 h-48 bg-brown/5 rounded-input flex flex-col items-center justify-center gap-2">
@@ -31,54 +45,70 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
               <p className="text-xs text-brown/40">QR Code belum tersedia</p>
             </div>
           )}
-          <p className="text-xs text-brown/60 text-center">Scan QR di atas, lalu upload bukti bayar ke WhatsApp</p>
+          <p className="text-xs text-brown/60 text-center">
+            Scan {activeMethod.provider} di atas, lalu upload bukti bayar ke WhatsApp
+          </p>
         </CardBody>
       </Card>
     );
   }
 
-  if (method === 'dana') {
+  if (activeMethod.methodType === 'dana') {
     return (
       <Card className="mt-3 border border-secondary/30">
         <CardBody className="flex flex-col items-center gap-2">
           <div className="flex items-center gap-2 text-brown font-semibold">
             <Smartphone size={18} className="text-primary" />
-            Bayar via Dana
+            {activeMethod.name}
           </div>
-          <p className="text-2xl font-bold text-primary tracking-wider">
-            {config.danaNumber || '(belum diisi)'}
+          <div className="text-center">
+            <p className="text-xs text-brown/50 font-semibold mb-1">{activeMethod.provider}</p>
+            <p className="text-2xl font-bold text-primary tracking-wider">
+              {activeMethod.accountNumber || '(belum diisi)'}
+            </p>
+            {activeMethod.accountName && (
+              <p className="text-sm font-semibold text-brown/70 mt-1">
+                a.n. {activeMethod.accountName}
+              </p>
+            )}
+          </div>
+          <p className="text-xs text-brown/60 text-center">
+            Transfer ke {activeMethod.provider} di atas, lalu upload bukti bayar ke WhatsApp
           </p>
-          <p className="text-xs text-brown/60 text-center">Transfer ke nomor Dana di atas, lalu upload bukti bayar ke WhatsApp</p>
         </CardBody>
       </Card>
     );
   }
 
-  if (method === 'transfer') {
+  if (activeMethod.methodType === 'transfer') {
     return (
       <Card className="mt-3 border border-secondary/30">
         <CardBody className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-brown font-semibold">
             <Building2 size={18} className="text-primary" />
-            Transfer Bank
+            {activeMethod.name}
           </div>
           <div className="bg-cream rounded-input p-3 space-y-1.5">
             <div className="flex justify-between text-sm">
-              <span className="text-brown/60">Bank</span>
-              <span className="font-semibold text-brown">{config.bankName || '-'}</span>
+              <span className="text-brown/60">Bank / Penyedia Jasa</span>
+              <span className="font-semibold text-brown">{activeMethod.provider || '-'}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-brown/60">No. Rekening</span>
+              <span className="text-brown/60">No. Rekening / Account</span>
               <span className="font-bold text-primary text-base tracking-wider">
-                {config.bankAccountNumber || '-'}
+                {activeMethod.accountNumber || '-'}
               </span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-brown/60">Atas Nama</span>
-              <span className="font-semibold text-brown">{config.bankAccountName || '-'}</span>
-            </div>
+            {activeMethod.accountName && (
+              <div className="flex justify-between text-sm">
+                <span className="text-brown/60">Atas Nama</span>
+                <span className="font-semibold text-brown">{activeMethod.accountName}</span>
+              </div>
+            )}
           </div>
-          <p className="text-xs text-brown/60 text-center">Transfer sesuai total pesanan, lalu upload bukti bayar ke WhatsApp</p>
+          <p className="text-xs text-brown/60 text-center flex-wrap">
+            Transfer sesuai total pesanan, lalu upload bukti bayar ke WhatsApp
+          </p>
         </CardBody>
       </Card>
     );

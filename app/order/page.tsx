@@ -33,7 +33,7 @@ const schema = z.object({
   pickupDateTime: z.string(),
   deliveryAddress: z.string(),
   deliveryFee: z.any().transform((v) => Number(v) || 0),
-  paymentMethod: z.enum(['qris', 'dana', 'transfer']),
+  paymentMethod: z.string().min(1, 'Pilih metode pembayaran'),
 }).refine(
   (d) => d.deliveryMethod !== 'pickup' || d.pickupDateTime.length > 0,
   { message: 'Pilih waktu pengambilan', path: ['pickupDateTime'] }
@@ -50,7 +50,7 @@ type FormValues = {
   pickupDateTime: string;
   deliveryAddress: string;
   deliveryFee: number;
-  paymentMethod: 'qris' | 'dana' | 'transfer';
+  paymentMethod: string;
 };
 
 export default function OrderPage() {
@@ -86,9 +86,17 @@ export default function OrderPage() {
   const deliveryFeeVal = watch('deliveryFee');
 
   useEffect(() => {
-    getPaymentConfig().then(setPaymentConfig).catch(() => {});
+    getPaymentConfig().then((pay) => {
+      setPaymentConfig(pay);
+      if (pay?.methods) {
+        const firstActive = pay.methods.find((m) => m.isActive);
+        if (firstActive) {
+          setValue('paymentMethod', firstActive.id);
+        }
+      }
+    }).catch(() => {});
     seedProductsIfEmpty().catch(() => {});
-  }, []);
+  }, [setValue]);
 
   useEffect(() => {
     setDelivery({
@@ -135,7 +143,7 @@ export default function OrderPage() {
         subtotal: sub,
         total,
         status: 'pending',
-        paymentMethod: data.paymentMethod,
+        paymentMethod: data.paymentMethod as PaymentMethod,
         paymentStatus: 'unpaid',
         notes: data.notes || '',
       });
@@ -283,36 +291,37 @@ export default function OrderPage() {
               3. Metode Pembayaran
             </h2>
             <div className="space-y-2">
-              <RadioCard
-                id="pay-qris"
-                name="paymentMethod"
-                value="qris"
-                checked={paymentMethodVal === 'qris'}
-                onChange={(v) => setValue('paymentMethod', v as PaymentMethod)}
-                label="QRIS"
-                description="Scan QR untuk bayar"
-                icon={<QrCode size={18} />}
-              />
-              <RadioCard
-                id="pay-dana"
-                name="paymentMethod"
-                value="dana"
-                checked={paymentMethodVal === 'dana'}
-                onChange={(v) => setValue('paymentMethod', v as PaymentMethod)}
-                label="Dana"
-                description="Transfer ke akun Dana"
-                icon={<Smartphone size={18} />}
-              />
-              <RadioCard
-                id="pay-transfer"
-                name="paymentMethod"
-                value="transfer"
-                checked={paymentMethodVal === 'transfer'}
-                onChange={(v) => setValue('paymentMethod', v as PaymentMethod)}
-                label="Transfer Bank"
-                description="Transfer ke rekening bank"
-                icon={<Building2 size={18} />}
-              />
+              {(paymentConfig?.methods?.filter(m => m.isActive) || [
+                { id: 'qris', name: 'QRIS', provider: 'QRIS', methodType: 'qris' as const },
+                { id: 'dana', name: 'Dana', provider: 'Dana', methodType: 'dana' as const },
+                { id: 'transfer', name: 'Transfer Bank', provider: 'BCA', methodType: 'transfer' as const }
+              ]).map((method) => (
+                <RadioCard
+                  key={method.id}
+                  id={`pay-${method.id}`}
+                  name="paymentMethod"
+                  value={method.id}
+                  checked={paymentMethodVal === method.id}
+                  onChange={(v) => setValue('paymentMethod', v)}
+                  label={method.name}
+                  description={
+                    method.methodType === 'qris'
+                      ? 'Scan QR untuk bayar'
+                      : method.methodType === 'dana'
+                      ? `Transfer ke akun ${method.provider}`
+                      : `Transfer ke rekening ${method.provider}`
+                  }
+                  icon={
+                    method.methodType === 'qris' ? (
+                      <QrCode size={18} />
+                    ) : method.methodType === 'dana' ? (
+                      <Smartphone size={18} />
+                    ) : (
+                      <Building2 size={18} />
+                    )
+                  }
+                />
+              ))}
             </div>
             <PaymentPreview method={paymentMethodVal} config={paymentConfig} />
           </section>

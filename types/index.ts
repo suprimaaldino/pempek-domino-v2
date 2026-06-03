@@ -65,6 +65,16 @@ export interface Customer {
 
 // ─── Payment Config ───────────────────────────────────────────────────────────
 
+export interface PaymentMethodItem {
+  id: string;
+  methodType: 'qris' | 'dana' | 'transfer';
+  name: string;
+  provider: string;
+  accountNumber: string;
+  accountName?: string;
+  isActive: boolean;
+}
+
 export interface PaymentConfig {
   qrisImageUrl: string;
   danaNumber: string;
@@ -73,6 +83,7 @@ export interface PaymentConfig {
   bankName: string;
   defaultDeliveryFee?: number;
   deliveryArea?: string;
+  methods?: PaymentMethodItem[];
 }
 
 // ─── Business Settings ────────────────────────────────────────────────────────

@@ -318,6 +318,33 @@ export async function seedProductsIfEmpty(): Promise<void> {
     bankName: 'BCA',
     defaultDeliveryFee: 10000,
     deliveryArea: '',
+    methods: [
+      {
+        id: 'qris',
+        methodType: 'qris',
+        name: 'QRIS',
+        provider: 'QRIS',
+        accountNumber: '',
+        isActive: true,
+      },
+      {
+        id: 'dana',
+        methodType: 'dana',
+        name: 'Dana',
+        provider: 'Dana',
+        accountNumber: '',
+        isActive: true,
+      },
+      {
+        id: 'transfer',
+        methodType: 'transfer',
+        name: 'Transfer Bank',
+        provider: 'BCA',
+        accountNumber: '',
+        accountName: 'Pempek Domino',
+        isActive: true,
+      },
+    ],
   } satisfies PaymentConfig);
 
   // Seed default business settings
