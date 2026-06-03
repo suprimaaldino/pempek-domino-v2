@@ -25,33 +25,69 @@ export function ImageUpload({ currentUrl, onUploaded, storagePath, label = 'Uplo
       setError('File harus berupa gambar.');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Ukuran gambar maksimal 5MB.');
-      return;
-    }
     setError(null);
+    setProgress(20);
 
-    const storageRef = ref(storage, `${storagePath}/${Date.now()}-${file.name}`);
-    const task = uploadBytesResumable(storageRef, file);
-
-    // Local preview
     const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target?.result as string);
-    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      setProgress(50);
+      const img = new window.Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400;
+          const MAX_HEIGHT = 400;
+          let width = img.width;
+          let height = img.height;
 
-    task.on(
-      'state_changed',
-      (snap) => setProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-      () => {
-        setError('Upload gagal. Coba lagi.');
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            throw new Error('Canvas context not available');
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Compress to JPEG with 0.7 quality to get a very small base64 string (typically 15-30 KB)
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          
+          setProgress(100);
+          setTimeout(() => {
+            setPreview(compressedBase64);
+            onUploaded(compressedBase64);
+            setProgress(null);
+          }, 150);
+        } catch (err) {
+          console.error(err);
+          setError('Gagal mengompresi gambar.');
+          setProgress(null);
+        }
+      };
+      img.onerror = () => {
+        setError('Gagal memproses file gambar.');
         setProgress(null);
-      },
-      async () => {
-        const url = await getDownloadURL(task.snapshot.ref);
-        onUploaded(url);
-        setProgress(null);
-      }
-    );
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => {
+      setError('Gagal membaca file.');
+      setProgress(null);
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
