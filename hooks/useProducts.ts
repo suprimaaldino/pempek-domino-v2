@@ -36,11 +36,13 @@ export function useProducts(activeOnly = true): UseProductsReturn {
     };
   }, [activeOnly]);
 
+  const sortedProducts = [...products].sort((a, b) => a.price - b.price);
+
   const grouped: GroupedProducts = {
-    kecil: products.filter((p) => p.category === 'kecil'),
-    besar: products.filter((p) => p.category === 'besar'),
-    paket: products.filter((p) => p.category === 'paket'),
+    kecil: sortedProducts.filter((p) => p.category === 'kecil'),
+    besar: sortedProducts.filter((p) => p.category === 'besar'),
+    paket: sortedProducts.filter((p) => p.category === 'paket'),
   };
 
-  return { products, grouped, loading, error };
+  return { products: sortedProducts, grouped, loading, error };
 }

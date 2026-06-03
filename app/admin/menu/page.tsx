@@ -47,7 +47,8 @@ export default function MenuManagementPage() {
 
   useEffect(() => {
     const unsub = subscribeToProducts((data) => {
-      setProducts(data);
+      const sorted = [...data].sort((a, b) => a.price - b.price);
+      setProducts(sorted);
       setLoading(false);
     });
     return () => unsub();
