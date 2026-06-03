@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { Truck, MapPin, CreditCard, Smartphone, Building2, QrCode, UtensilsCrossed } from 'lucide-react';
+import Link from 'next/link';
+import { Truck, MapPin, Smartphone, Building2, QrCode, UtensilsCrossed, ShieldCheck } from 'lucide-react';
 import { Input, Textarea } from '@/components/ui/Input';
 import { RadioCard } from '@/components/ui/RadioCard';
 import { Button } from '@/components/ui/Button';
@@ -125,8 +126,8 @@ export default function OrderPage() {
         customerName: data.customerName,
         whatsappNumber: phone,
         deliveryMethod: data.deliveryMethod,
-        pickupDateTime: data.deliveryMethod === 'pickup' ? data.pickupDateTime : undefined,
-        deliveryAddress: data.deliveryMethod === 'delivery' ? data.deliveryAddress : undefined,
+        pickupDateTime: data.deliveryMethod === 'pickup' ? data.pickupDateTime : null,
+        deliveryAddress: data.deliveryMethod === 'delivery' ? data.deliveryAddress : null,
         deliveryFee: fee,
         items: orderItems,
         subtotal: sub,
@@ -134,10 +135,14 @@ export default function OrderPage() {
         status: 'pending',
         paymentMethod: data.paymentMethod,
         paymentStatus: 'unpaid',
-        notes: data.notes,
+        notes: data.notes || '',
       });
 
-      await upsertCustomer(data.customerName, phone, total);
+      try {
+        await upsertCustomer(data.customerName, phone, total);
+      } catch (custErr) {
+        console.error('Failed to upsert customer details:', custErr);
+      }
 
       clearCart();
       toastSuccess('Pesanan berhasil dibuat!');
@@ -157,9 +162,19 @@ export default function OrderPage() {
       {/* Header */}
       <div className="bg-primary text-white px-4 pt-safe-top pb-6">
         <div className="max-w-lg mx-auto pt-4">
-          <div className="flex items-center gap-3 mb-1">
-            <UtensilsCrossed size={24} />
-            <h1 className="font-display font-bold text-xl">Pempek Domino</h1>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-3">
+              <UtensilsCrossed size={24} />
+              <h1 className="font-display font-bold text-xl">Pempek Domino</h1>
+            </div>
+            <Link
+              href="/admin/login"
+              className="flex items-center gap-1.5 text-white/40 hover:text-white/80 transition-colors text-xs py-1 px-2 rounded-lg hover:bg-white/10"
+              aria-label="Masuk sebagai admin"
+            >
+              <ShieldCheck size={14} />
+              <span>Admin</span>
+            </Link>
           </div>
           <p className="text-white/70 text-sm">Pesan Pempek Palembang, Nikmat di Mana Saja</p>
         </div>

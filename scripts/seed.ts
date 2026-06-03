@@ -1,5 +1,6 @@
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import { collection, doc, setDoc, getDocs, writeBatch } from 'firebase/firestore';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const INITIAL_PRODUCTS = [
   { name: 'Pempek Lenjer Kecil', price: 5000, category: 'kecil', isActive: true, description: 'Pempek lenjer ukuran kecil yang lembut dan gurih.' },
@@ -18,22 +19,55 @@ const INITIAL_PRODUCTS = [
 
 export async function seedProducts() {
   console.log('🌱 Seeding products...');
-  const productsRef = collection(db, 'products');
-  const batch = writeBatch(db);
 
-  for (const p of INITIAL_PRODUCTS) {
-    const newDoc = doc(productsRef);
-    batch.set(newDoc, { ...p, createdAt: new Date() });
+  // Try to authenticate as admin first
+  const adminEmail = 'suprimaaldino@gmail.com';
+  const adminPassword = 'p3mp3Kd0m!n0';
+
+  try {
+    console.log(`🔐 Attempting to authenticate as ${adminEmail}...`);
+    await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+    console.log('🔓 Authenticated successfully.');
+  } catch (authError: any) {
+    console.warn(`⚠️ Authentication skipped/failed: ${authError.message}`);
+    console.log('⚡ Attempting unauthenticated seeding...');
   }
 
-  await batch.commit();
-  console.log('✅ Seeding complete!');
+  try {
+    const productsRef = collection(db, 'products');
+    const batch = writeBatch(db);
+
+    for (const p of INITIAL_PRODUCTS) {
+      const newDoc = doc(productsRef);
+      batch.set(newDoc, { ...p, createdAt: new Date() });
+    }
+
+    await batch.commit();
+    console.log('✅ Seeding complete!');
+  } catch (error: any) {
+    console.error('❌ Seeding failed!');
+    console.error(error);
+    console.log('\n💡 Troubleshooting Tips:');
+    console.log('1. Make sure you have created the admin user in Firebase Auth:');
+    console.log(`   - Email: ${adminEmail}`);
+    console.log(`   - Password: ${adminPassword}`);
+    console.log('2. Alternatively, temporarily change your Firestore security rules to public:');
+    console.log('   rules_version = \'2\';');
+    console.log('   service cloud.firestore {');
+    console.log('     match /databases/{database}/documents {');
+    console.log('       match /{document=**} {');
+    console.log('         allow read, write: if true;');
+    console.log('       }');
+    console.log('     }');
+    console.log('   }');
+    console.log('   Once seeded, revert back or deploy the rules in firestore.rules.\n');
+    throw error;
+  }
 }
 
 // Default execution check
 if (require.main === module) {
   seedProducts().then(() => process.exit(0)).catch((e) => {
-    console.error(e);
     process.exit(1);
   });
 }

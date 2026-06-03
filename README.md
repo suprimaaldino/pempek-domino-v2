@@ -29,7 +29,7 @@ Production-ready Progressive Web App (PWA) untuk sistem manajemen pre-order Pemp
 - Buat project baru di [Firebase Console](https://console.firebase.google.com).
 - Aktifkan **Firestore**, **Authentication** (Metode Email/Password), dan **Storage**.
 - Tambahkan Admin User di menu Auth:
-  - Email: `admin@pempekdomino.internal`
+  - Email: `suprimaaldino@gmail.com`
   - Password: `p3mp3Kd0m!n0`
 - Buat file `.env.local` dan isi dengan kredensial dari project settings.
 

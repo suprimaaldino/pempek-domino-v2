@@ -19,9 +19,15 @@ service cloud.firestore {
       allow read, update, delete: if isAuthenticated();
     }
 
-    // Customers: Admin only
+    // Counters: Public read/write (untuk order number generator)
+    match /counters/{counterId} {
+      allow read, write: if true;
+    }
+
+    // Customers: Public create/update (untuk upsert saat order), Admin read/delete
     match /customers/{customerId} {
-      allow read, write: if isAuthenticated();
+      allow create, update: if true;
+      allow read, delete: if isAuthenticated();
     }
 
     // Payment Config: Public read, Admin write

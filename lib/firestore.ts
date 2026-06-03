@@ -14,6 +14,7 @@ import {
   onSnapshot,
   Timestamp,
   runTransaction,
+  increment,
   QueryConstraint,
   DocumentData,
   QuerySnapshot,
@@ -212,33 +213,23 @@ export async function upsertCustomer(
   whatsappNumber: string,
   orderTotal: number
 ): Promise<void> {
-  const q = query(
-    collection(db, 'customers'),
-    where('whatsappNumber', '==', whatsappNumber),
-    limit(1)
-  );
-  const snap = await getDocs(q);
   const now = Timestamp.now();
+  // Use normalized phone as document ID → natural dedup, no read needed
+  const docId = whatsappNumber.replace(/\D/g, '');
+  const customerRef = doc(db, 'customers', docId);
 
-  if (snap.empty) {
-    await addDoc(collection(db, 'customers'), {
+  await setDoc(
+    customerRef,
+    {
       name,
       whatsappNumber,
-      totalOrders: 1,
-      totalSpending: orderTotal,
+      totalOrders: increment(1),
+      totalSpending: increment(orderTotal),
       lastOrderAt: now,
-      createdAt: now,
-    });
-  } else {
-    const ref = snap.docs[0].ref;
-    const existing = snap.docs[0].data() as Omit<Customer, 'id'>;
-    await updateDoc(ref, {
-      name,
-      totalOrders: existing.totalOrders + 1,
-      totalSpending: existing.totalSpending + orderTotal,
-      lastOrderAt: now,
-    });
-  }
+      createdAt: now, // only meaningful on first write; merge keeps existing if needed
+    },
+    { merge: true }
+  );
 }
 
 export async function getCustomers(): Promise<Customer[]> {

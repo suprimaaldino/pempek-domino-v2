@@ -366,7 +366,7 @@ After running the dev server (`npm run dev`), verify these flows using the brows
 
 1. **Create a Firebase project** at [console.firebase.google.com](https://console.firebase.google.com)
 2. Enable **Firestore**, **Authentication** (Email/Password), and **Storage**
-3. Create the admin user in Firebase Auth: email `admin@pempekdomino.internal`, password `p3mp3Kd0m!n0`
+3. Create the admin user in Firebase Auth: email `suprimaaldino@gmail.com`, password `p3mp3Kd0m!n0`
 4. Fill in `.env.local` with your Firebase credentials
 5. Run `npx tsx scripts/seed.ts` to populate products
 6. Test the full order flow: place an order → view confirmation → check WhatsApp link

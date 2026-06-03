@@ -40,6 +40,7 @@ export default function RootLayout({
     <html lang="id">
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body>
         <ToastProvider>

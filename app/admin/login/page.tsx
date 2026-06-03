@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { Lock, User, UtensilsCrossed } from 'lucide-react';
+import { Lock, User, UtensilsCrossed, Eye, EyeOff } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -23,6 +23,7 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const { error: toastError } = useToast();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -30,6 +31,10 @@ export default function AdminLoginPage() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      username: '',
+      password: '',
+    },
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -49,8 +54,8 @@ export default function AdminLoginPage() {
     <main className="min-h-screen bg-cream flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-card">
-            <UtensilsCrossed size={32} className="text-white" />
+          <div className="w-16 h-16 rounded-2xl overflow-hidden bg-primary flex items-center justify-center mx-auto mb-4 shadow-card">
+            <img src="/icon.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="font-display font-bold text-2xl text-brown">Pempek Domino</h1>
           <p className="text-brown/50 text-sm">Masuk ke Panel Admin</p>
@@ -58,19 +63,31 @@ export default function AdminLoginPage() {
 
         <Card>
           <CardBody className="p-6">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
               <Input
                 label="Username"
                 placeholder="Masukkan username"
                 leftIcon={<User size={18} />}
+                autoComplete="off"
                 error={errors.username?.message}
                 {...register('username')}
               />
               <Input
                 label="Password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Masukkan password"
                 leftIcon={<Lock size={18} />}
+                autoComplete="new-password"
+                rightIcon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="hover:text-brown focus:outline-none transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                }
                 error={errors.password?.message}
                 {...register('password')}
               />

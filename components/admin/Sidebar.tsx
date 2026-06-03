@@ -46,8 +46,8 @@ export function AdminSidebar() {
         {/* Logo */}
         <div className="px-6 py-5 border-b border-brown/10">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-input bg-primary flex items-center justify-center">
-              <UtensilsCrossed size={18} className="text-white" />
+            <div className="w-9 h-9 rounded-input overflow-hidden bg-primary flex items-center justify-center">
+              <img src="/icon.png" alt="Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <p className="font-display font-bold text-brown text-base leading-tight">Pempek Domino</p>

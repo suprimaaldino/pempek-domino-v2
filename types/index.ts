@@ -37,8 +37,8 @@ export interface Order {
   customerName: string;
   whatsappNumber: string;
   deliveryMethod: DeliveryMethod;
-  pickupDateTime?: string;
-  deliveryAddress?: string;
+  pickupDateTime?: string | null;
+  deliveryAddress?: string | null;
   deliveryFee: number;
   items: OrderItem[];
   subtotal: number;
@@ -46,7 +46,7 @@ export interface Order {
   status: OrderStatus;
   paymentMethod?: PaymentMethod;
   paymentStatus: PaymentStatus;
-  notes?: string;
+  notes?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
