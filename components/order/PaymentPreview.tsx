@@ -2,11 +2,11 @@
 
 import Image from 'next/image';
 import { QrCode, Smartphone, Building2 } from 'lucide-react';
-import type { PaymentConfig, PaymentMethod } from '@/types';
+import type { PaymentConfig } from '@/types';
 import { Card, CardBody } from '@/components/ui/Card';
 
 interface PaymentPreviewProps {
-  method: PaymentMethod;
+  method: string;
   config: PaymentConfig | null;
 }
 

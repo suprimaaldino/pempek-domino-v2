@@ -7,9 +7,7 @@ import {
   Building2, 
   Smartphone, 
   QrCode,
-  Layout,
   Save,
-  MessageSquare
 } from 'lucide-react';
 import { 
   getBusinessSettings, 
@@ -90,6 +88,41 @@ export default function SettingsPage() {
             ];
           }
           setPaymentConfig(payData);
+        } else {
+          setPaymentConfig({
+            qrisImageUrl: '',
+            danaNumber: '',
+            bankName: 'BCA',
+            bankAccountNumber: '',
+            bankAccountName: '',
+            methods: [
+              {
+                id: 'qris',
+                methodType: 'qris',
+                name: 'QRIS',
+                provider: 'QRIS',
+                accountNumber: '',
+                isActive: true
+              },
+              {
+                id: 'dana',
+                methodType: 'dana',
+                name: 'Dana',
+                provider: 'Dana',
+                accountNumber: '',
+                isActive: true
+              },
+              {
+                id: 'transfer',
+                methodType: 'transfer',
+                name: 'Transfer Bank',
+                provider: 'BCA',
+                accountNumber: '',
+                accountName: '',
+                isActive: true
+              }
+            ]
+          });
         }
       } catch (err) {
         console.error(err);
