@@ -6,7 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Truck, MapPin, Smartphone, Building2, QrCode, UtensilsCrossed, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
+import { Truck, MapPin, Smartphone, Building2, QrCode, ShieldCheck } from 'lucide-react';
+import appleIcon from '../apple-icon.png';
 import { Input, Textarea } from '@/components/ui/Input';
 import { RadioCard } from '@/components/ui/RadioCard';
 import { Button } from '@/components/ui/Button';
@@ -164,7 +166,7 @@ export default function OrderPage() {
         <div className="max-w-lg mx-auto pt-4">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-3">
-              <UtensilsCrossed size={24} />
+              <Image src={appleIcon} alt="Logo Pempek Domino" width={24} height={24} className="rounded-md" />
               <h1 className="font-display font-bold text-xl">Pempek Domino</h1>
             </div>
             <Link
