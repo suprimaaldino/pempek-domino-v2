@@ -48,8 +48,8 @@ export function AdminSidebar() {
         {/* Logo */}
         <div className="px-6 py-5 border-b border-brown/10">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-input overflow-hidden bg-primary flex items-center justify-center">
-              <img src="/icons/icon-512.png" alt="Logo" className="w-full h-full object-contain p-1" />
+            <div className="w-10 h-10 rounded-input overflow-visible bg-primary flex items-center justify-center">
+              <img src="/icons/icon-192.png" alt="Logo" className="w-9 h-9 object-contain" />
             </div>
             <div>
               <p className="font-display font-bold text-brown text-base leading-tight">Pempek Domino</p>
@@ -99,7 +99,7 @@ export function AdminSidebar() {
         aria-label="Navigasi bawah"
       >
         <div className="flex items-center justify-around px-2 py-1">
-          {NAV_ITEMS.slice(0, 5).map(({ href, label, icon: Icon }) => {
+          {NAV_ITEMS.slice(0, 4).map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href);
             return (
               <Link
@@ -115,6 +115,25 @@ export function AdminSidebar() {
               </Link>
             );
           })}
+          {/* Settings and Logout on Mobile */}
+          <Link
+            href="/admin/settings"
+            className={cn(
+              'flex flex-col items-center gap-0.5 px-3 py-2 rounded-input transition-all',
+              pathname.startsWith('/admin/settings') ? 'text-primary' : 'text-brown/50'
+            )}
+          >
+            <Settings size={20} strokeWidth={pathname.startsWith('/admin/settings') ? 2.5 : 2} />
+            <span className="text-[10px] font-semibold">Pengaturan</span>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-input transition-all text-brown/50 hover:text-error hover:bg-error/5"
+            aria-label="Logout"
+          >
+            <LogOut size={20} />
+            <span className="text-[10px] font-semibold">Keluar</span>
+          </button>
         </div>
       </nav>
     </>

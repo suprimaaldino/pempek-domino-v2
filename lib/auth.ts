@@ -24,26 +24,47 @@ export async function loginAdmin(
   const expectedUsername = process.env.NEXT_PUBLIC_ADMIN_USERNAME || 'yangpunyapempekdomino';
   const passwordHash = process.env.NEXT_PUBLIC_ADMIN_PASSWORD_HASH || '';
 
+  // Debug: log environment variable status (don't log the actual hash)
+  console.log('[AUTH] Username check:', { expected: expectedUsername, received: username, match: username === expectedUsername });
+  console.log('[AUTH] Password hash exists:', !!passwordHash, 'length:', passwordHash.length);
+
   if (username !== expectedUsername) {
-    console.error('Username mismatch');
+    console.error('[AUTH] Username mismatch', { expected: expectedUsername, received: username });
     throw new Error('Username atau password salah.');
   }
 
-  if (passwordHash) {
+  if (!passwordHash) {
+    console.error('[AUTH] CRITICAL: Password hash not set in environment variables');
+    throw new Error('Server error: Admin credentials not configured. Contact administrator.');
+  }
+
+  try {
     const valid = await bcrypt.compare(password, passwordHash);
-    console.log('Bcrypt verification result:', valid);
+    console.log('[AUTH] Bcrypt verification result:', valid);
     if (!valid) {
-      console.error('Bcrypt validation failed');
+      console.error('[AUTH] Bcrypt validation failed - password incorrect');
       throw new Error('Username atau password salah.');
     }
+  } catch (bcryptErr: any) {
+    console.error('[AUTH] Bcrypt error:', bcryptErr.message);
+    throw new Error('Server error: Authentication service unavailable. Please try again.');
   }
 
   await setPersistence(auth, browserLocalPersistence);
   try {
+    console.log('[AUTH] Attempting Firebase sign-in with email:', ADMIN_EMAIL);
     await signInWithEmailAndPassword(auth, ADMIN_EMAIL, password);
+    console.log('[AUTH] Firebase sign-in successful');
   } catch (firebaseErr: any) {
-    console.error('Firebase sign in failed:', firebaseErr);
-    throw firebaseErr;
+    console.error('[AUTH] Firebase sign in failed:', firebaseErr.code, firebaseErr.message);
+    // Map Firebase errors to user-friendly messages
+    if (firebaseErr.code === 'auth/user-not-found') {
+      throw new Error('Admin account not found in Firebase. Contact administrator.');
+    }
+    if (firebaseErr.code === 'auth/wrong-password') {
+      throw new Error('Username atau password salah.');
+    }
+    throw new Error('Login gagal. Periksa kembali username dan password.');
   }
 }
 

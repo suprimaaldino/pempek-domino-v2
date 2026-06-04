@@ -58,9 +58,10 @@ export function CustomerSidebar({ isOpen, onClose }: CustomerSidebarProps) {
               <Image
                 src="/icons/icon-192.png"
                 alt="Logo Pempek Domino"
-                width={28}
-                height={28}
-                className="rounded-md bg-white p-0.5 object-contain"
+                width={32}
+                height={32}
+                className="w-8 h-8 object-contain rounded-md bg-white"
+                priority
               />
             <div>
               <h2 className="font-display font-bold text-base leading-tight">Pempek Domino</h2>

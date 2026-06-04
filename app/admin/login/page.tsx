@@ -56,13 +56,13 @@ export default function AdminLoginPage() {
     <main className="min-h-screen bg-cream flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8 flex flex-col items-center justify-center">
-          <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-card mb-4 relative bg-white flex items-center justify-center">
+          <div className="w-24 h-24 rounded-2xl overflow-visible shadow-card mb-4 relative bg-white flex items-center justify-center">
             <Image
               src="/icons/icon-192.png"
               alt="Logo Pempek Domino"
-              width={80}
-              height={80}
-              className="object-contain p-1"
+              width={96}
+              height={96}
+              className="w-20 h-20 object-contain"
               priority
             />
           </div>
