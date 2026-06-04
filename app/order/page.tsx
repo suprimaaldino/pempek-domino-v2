@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Truck, MapPin, Smartphone, Building2, QrCode, ShieldCheck, ClipboardList, Upload } from 'lucide-react';
+import { Truck, MapPin, Smartphone, Building2, QrCode, ShieldCheck, ClipboardList, Upload, ChevronDown } from 'lucide-react';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import appleIcon from '../apple-icon.png';
 import { Input, Textarea } from '@/components/ui/Input';
@@ -62,6 +62,11 @@ export default function OrderPage() {
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [paymentProofUrl, setPaymentProofUrl] = useState<string>('');
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
+    kecil: true,
+    besar: false,
+    paket: false,
+  });
 
   const {
     register,
@@ -169,6 +174,12 @@ export default function OrderPage() {
   };
 
   const categoryKeys = ['kecil', 'besar', 'paket'] as const;
+  const toggleCategory = (category: string) => {
+    setExpandedCategories((current) => ({
+      ...current,
+      [category]: !current[category],
+    }));
+  };
 
   return (
     <main className="min-h-screen bg-neutral-50 pb-44">
@@ -210,16 +221,35 @@ export default function OrderPage() {
               categoryKeys.map((cat) => {
                 const prods = grouped[cat];
                 if (!prods.length) return null;
+                const isExpanded = expandedCategories[cat];
                 return (
                   <div key={cat} className="mb-5">
-                    <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-2">
-                      {CATEGORY_LABELS[cat]}
-                    </p>
-                    <div className="space-y-2">
-                      {prods.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                      ))}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(cat)}
+                      className="w-full flex items-center justify-between gap-3 rounded-card border border-neutral-100 bg-white px-3 py-3 shadow-card text-left"
+                      aria-expanded={isExpanded}
+                      aria-controls={`category-${cat}`}
+                    >
+                      <div>
+                        <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">
+                          {CATEGORY_LABELS[cat]}
+                        </p>
+                        <p className="text-xs text-neutral-500 mt-0.5">{prods.length} menu</p>
+                      </div>
+                      <ChevronDown
+                        size={18}
+                        className={`text-neutral-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        aria-hidden="true"
+                      />
+                    </button>
+                    {isExpanded && (
+                      <div id={`category-${cat}`} className="space-y-2 mt-2">
+                        {prods.map((product) => (
+                          <ProductCard key={product.id} product={product} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })
