@@ -20,7 +20,7 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
   // Find the configured method, or fallback to default structure
   const activeMethod = config.methods?.find((m) => m.id === method) || {
     id: method,
-    methodType: method as 'qris' | 'dana' | 'transfer',
+    methodType: method as 'qris' | 'dana' | 'ewallet' | 'transfer' | 'bank',
     name: method === 'qris' ? 'QRIS' : method === 'dana' ? 'Dana' : 'Transfer Bank',
     provider: method === 'qris' ? 'QRIS' : method === 'dana' ? 'Dana' : config.bankName,
     accountNumber: method === 'qris' ? config.qrisImageUrl : method === 'dana' ? config.danaNumber : config.bankAccountNumber,
@@ -168,7 +168,7 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
     );
   }
 
-  if (activeMethod.methodType === 'dana') {
+  if (activeMethod.methodType === 'dana' || activeMethod.methodType === 'ewallet') {
     return (
       <Card className="mt-3 border border-secondary/30">
         <CardBody className="flex flex-col items-center gap-2">
@@ -195,7 +195,7 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
     );
   }
 
-  if (activeMethod.methodType === 'transfer') {
+  if (activeMethod.methodType === 'transfer' || activeMethod.methodType === 'bank') {
     return (
       <Card className="mt-3 border border-secondary/30">
         <CardBody className="flex flex-col gap-3">
