@@ -171,39 +171,51 @@ export default function OrderPage() {
   const categoryKeys = ['kecil', 'besar', 'paket'] as const;
 
   return (
-    <main className="min-h-screen bg-cream pb-40">
-      {/* Header */}
-      <div className="bg-primary text-white px-4 pt-safe-top pb-6">
-        <div className="max-w-lg mx-auto pt-4">
-          <div className="flex items-center gap-3 mb-1">
-            <Image src={appleIcon} alt="Logo Pempek Domino" width={24} height={24} className="rounded-md" />
-            <h1 className="font-display font-bold text-xl">Pempek Domino</h1>
+    <main className="min-h-screen bg-neutral-50 pb-44">
+      {/* Header — clean white with red accent */}
+      <div className="bg-white border-b border-neutral-100 px-4 pt-safe-top pb-4">
+        <div className="max-w-lg mx-auto pt-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
+              <Image src={appleIcon} alt="Logo Pempek Domino" width={32} height={32} className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <h1 className="font-bold text-neutral-900 text-base leading-tight">Pempek Domino</h1>
+              <p className="text-xs text-neutral-400">Pesan Pempek Palembang</p>
+            </div>
           </div>
-          <p className="text-white/70 text-sm">Pesan Pempek Palembang, Nikmat di Mana Saja</p>
+          <Link
+            href="/my-orders"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-neutral-600 hover:text-primary hover:bg-primary/5 transition-colors border border-neutral-200"
+          >
+            <ClipboardList size={14} />
+            Cek Pesanan
+          </Link>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <div className="max-w-lg mx-auto px-4 space-y-6 mt-6">
+        <div className="max-w-lg mx-auto px-4 space-y-8 mt-6">
 
           {/* Section 1: Pilih Menu */}
           <section aria-labelledby="section-menu">
-            <h2 id="section-menu" className="font-display font-bold text-brown text-lg mb-3">
-              1. Pilih Menu
-            </h2>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">1</span>
+              <h2 id="section-menu" className="font-bold text-neutral-900 text-base">Pilih Menu</h2>
+            </div>
 
             {productsLoading ? (
-              <SkeletonList count={3} />
+              <SkeletonList count={4} />
             ) : (
               categoryKeys.map((cat) => {
                 const prods = grouped[cat];
                 if (!prods.length) return null;
                 return (
-                  <div key={cat} className="mb-6">
-                    <h3 className="font-semibold text-brown/70 text-sm uppercase tracking-wide mb-2">
+                  <div key={cat} className="mb-5">
+                    <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-2">
                       {CATEGORY_LABELS[cat]}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
+                    </p>
+                    <div className="space-y-2">
                       {prods.map((product) => (
                         <ProductCard key={product.id} product={product} />
                       ))}
@@ -216,10 +228,11 @@ export default function OrderPage() {
 
           {/* Section 2: Data Pemesan */}
           <section aria-labelledby="section-pemesan">
-            <h2 id="section-pemesan" className="font-display font-bold text-brown text-lg mb-3">
-              2. Data Pemesan
-            </h2>
-            <div className="bg-white rounded-card shadow-card p-4 space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">2</span>
+              <h2 id="section-pemesan" className="font-bold text-neutral-900 text-base">Data Pemesan</h2>
+            </div>
+            <div className="bg-white rounded-card shadow-card border border-neutral-100 p-4 space-y-4">
               <Input
                 label="Nama Lengkap"
                 placeholder="Contoh: Budi Santoso"
@@ -249,11 +262,12 @@ export default function OrderPage() {
             </div>
           </section>
 
-          {/* Section 3: Pilihan Pengiriman */}
+          {/* Section 3: Pengiriman */}
           <section aria-labelledby="section-pengiriman">
-            <h2 id="section-pengiriman" className="font-display font-bold text-brown text-lg mb-3">
-              3. Pilihan Pengiriman
-            </h2>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">3</span>
+              <h2 id="section-pengiriman" className="font-bold text-neutral-900 text-base">Pengiriman</h2>
+            </div>
             <div className="space-y-2">
               <RadioCard
                 id="delivery-pickup"
@@ -263,7 +277,7 @@ export default function OrderPage() {
                 onChange={(v) => setValue('deliveryMethod', v as 'pickup' | 'delivery')}
                 label="Ambil Sendiri"
                 description="Ambil di tempat sesuai jadwal"
-                icon={<MapPin size={18} />}
+                icon={<MapPin size={16} />}
               />
               <RadioCard
                 id="delivery-send"
@@ -273,11 +287,11 @@ export default function OrderPage() {
                 onChange={(v) => setValue('deliveryMethod', v as 'pickup' | 'delivery')}
                 label="Dikirim"
                 description="Diantar ke alamat kamu"
-                icon={<Truck size={18} />}
+                icon={<Truck size={16} />}
               />
             </div>
 
-            <div className="mt-3 bg-white rounded-card shadow-card p-4">
+            <div className="mt-3 bg-white rounded-card shadow-card border border-neutral-100 p-4">
               {deliveryMethod === 'pickup' ? (
                 <Input
                   label="Tanggal & Jam Ambil"
@@ -306,11 +320,12 @@ export default function OrderPage() {
             </div>
           </section>
 
-          {/* Section 4: Metode Pembayaran */}
+          {/* Section 4: Pembayaran */}
           <section aria-labelledby="section-pembayaran">
-            <h2 id="section-pembayaran" className="font-display font-bold text-brown text-lg mb-3">
-              4. Metode Pembayaran
-            </h2>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">4</span>
+              <h2 id="section-pembayaran" className="font-bold text-neutral-900 text-base">Pembayaran</h2>
+            </div>
             <div className="space-y-2">
               {(paymentConfig?.methods?.filter(m => m.isActive) || [
                 { id: 'qris', name: 'QRIS', provider: 'QRIS', methodType: 'qris' as const },
@@ -334,11 +349,11 @@ export default function OrderPage() {
                   }
                   icon={
                     method.methodType === 'qris' ? (
-                      <QrCode size={18} />
+                      <QrCode size={16} />
                     ) : method.methodType === 'dana' ? (
-                      <Smartphone size={18} />
+                      <Smartphone size={16} />
                     ) : (
-                      <Building2 size={18} />
+                      <Building2 size={16} />
                     )
                   }
                 />
@@ -347,11 +362,11 @@ export default function OrderPage() {
             <PaymentPreview method={paymentMethodVal} config={paymentConfig} />
 
             {/* Upload Bukti Pembayaran */}
-            <div className="mt-4 bg-white rounded-card shadow-card p-4">
+            <div className="mt-3 bg-white rounded-card shadow-card border border-neutral-100 p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Upload size={16} className="text-primary" />
-                <p className="font-semibold text-brown text-sm">Upload Bukti Pembayaran</p>
-                <span className="text-xs text-brown/40">(opsional)</span>
+                <Upload size={14} className="text-primary" />
+                <p className="font-semibold text-neutral-800 text-sm">Upload Bukti Pembayaran</p>
+                <span className="ml-auto text-xs text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-pill">opsional</span>
               </div>
               <ImageUpload
                 label=""
@@ -359,7 +374,7 @@ export default function OrderPage() {
                 storagePath="payment-proofs"
                 onUploaded={(url) => setPaymentProofUrl(url)}
               />
-              <p className="text-xs text-brown/50 mt-2">Upload sekarang atau kirim via WhatsApp setelah pesan dibuat.</p>
+              <p className="text-xs text-neutral-400 mt-2">Upload sekarang atau kirim via WhatsApp setelah pesan dibuat.</p>
             </div>
           </section>
 

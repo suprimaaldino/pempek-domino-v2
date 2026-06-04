@@ -21,15 +21,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, helperText, leftIcon, rightIcon, className, id, ...props }, ref) => {
     const inputId = id || props.name;
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-semibold text-brown">
+          <label htmlFor={inputId} className="text-sm font-semibold text-neutral-700">
             {label}
           </label>
         )}
         <div className="relative">
           {leftIcon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-brown/50">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400">
               {leftIcon}
             </div>
           )}
@@ -37,12 +37,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full rounded-input border px-4 py-3 text-brown bg-white',
-              'placeholder:text-brown/40 transition-all duration-150',
-              'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary',
+              'w-full rounded-input border bg-white px-4 py-3 text-sm text-neutral-900',
+              'placeholder:text-neutral-400 transition-all duration-150',
+              'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary',
               error
-                ? 'border-error focus:ring-error/40 focus:border-error'
-                : 'border-brown/20 hover:border-brown/40',
+                ? 'border-error focus:ring-error/20 focus:border-error'
+                : 'border-neutral-200 hover:border-neutral-300',
               leftIcon && 'pl-10',
               rightIcon && 'pr-10',
               className
@@ -50,14 +50,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightIcon && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-brown/50">
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400">
               {rightIcon}
             </div>
           )}
         </div>
-        {error && <p className="text-sm text-error">{error}</p>}
+        {error && <p className="text-xs text-error flex items-center gap-1">{error}</p>}
         {helperText && !error && (
-          <p className="text-sm text-brown/60">{helperText}</p>
+          <p className="text-xs text-neutral-400">{helperText}</p>
         )}
       </div>
     );
@@ -69,9 +69,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ label, error, helperText, className, id, ...props }, ref) => {
     const inputId = id || props.name;
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-semibold text-brown">
+          <label htmlFor={inputId} className="text-sm font-semibold text-neutral-700">
             {label}
           </label>
         )}
@@ -80,19 +80,19 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={inputId}
           rows={3}
           className={cn(
-            'w-full rounded-input border px-4 py-3 text-brown bg-white resize-none',
-            'placeholder:text-brown/40 transition-all duration-150',
-            'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary',
+            'w-full rounded-input border bg-white px-4 py-3 text-sm text-neutral-900 resize-none',
+            'placeholder:text-neutral-400 transition-all duration-150',
+            'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary',
             error
-              ? 'border-error focus:ring-error/40 focus:border-error'
-              : 'border-brown/20 hover:border-brown/40',
+              ? 'border-error focus:ring-error/20 focus:border-error'
+              : 'border-neutral-200 hover:border-neutral-300',
             className
           )}
           {...props}
         />
-        {error && <p className="text-sm text-error">{error}</p>}
+        {error && <p className="text-xs text-error">{error}</p>}
         {helperText && !error && (
-          <p className="text-sm text-brown/60">{helperText}</p>
+          <p className="text-xs text-neutral-400">{helperText}</p>
         )}
       </div>
     );

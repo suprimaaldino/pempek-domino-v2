@@ -82,37 +82,37 @@ export default function ConfirmationPage() {
   const waLink = generateWhatsAppLink(waPhone, buildWhatsAppMessage(order));
 
   return (
-    <main className="min-h-screen bg-cream pb-8">
+    <main className="min-h-screen bg-neutral-50 pb-8">
       {/* Success header */}
-      <div className="bg-primary px-4 pt-safe-top pb-8 text-white text-center">
+      <div className="bg-primary px-4 pt-safe-top pb-10 text-white text-center">
         <div className="max-w-lg mx-auto pt-6">
-          <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
-            <CheckCircle2 size={36} className="text-secondary" />
+          <div className="w-16 h-16 rounded-full bg-white/15 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 size={36} className="text-white" />
           </div>
-          <h1 className="font-display font-bold text-2xl mb-1">Pesanan Masuk!</h1>
+          <h1 className="font-bold text-2xl mb-1">Pesanan Masuk!</h1>
           <p className="text-white/70 text-sm">Kami akan segera memproses pesananmu</p>
-          <div className="mt-3 bg-white/10 rounded-input px-4 py-2 inline-block">
-            <span className="text-xs text-white/70">No. Pesanan</span>
-            <p className="font-mono font-bold text-lg">{order.orderNumber}</p>
+          <div className="mt-4 bg-white/10 rounded-xl px-5 py-2.5 inline-block">
+            <p className="text-white/60 text-xs mb-0.5">No. Pesanan</p>
+            <p className="font-mono font-bold text-lg tracking-wide">{order.orderNumber}</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 -mt-2 space-y-4">
+      <div className="max-w-lg mx-auto px-4 -mt-4 space-y-3">
         {/* Status */}
         <Card>
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-brown/60 mb-1">Status Pesanan</p>
+                <p className="text-xs text-neutral-400 mb-1">Status Pesanan</p>
                 <OrderStatusBadge status={order.status} />
               </div>
               <div className="text-right">
-                <p className="text-xs text-brown/60 mb-1">Status Pembayaran</p>
+                <p className="text-xs text-neutral-400 mb-1">Status Pembayaran</p>
                 <PaymentStatusBadge status={order.paymentStatus} />
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-brown/5 text-xs text-brown/50">
+            <div className="mt-3 pt-3 border-t border-neutral-100 text-xs text-neutral-400">
               {order.createdAt && formatDateId(order.createdAt)}
             </div>
           </CardBody>
@@ -140,29 +140,29 @@ export default function ConfirmationPage() {
         {/* Order items */}
         <Card>
           <CardBody>
-            <h2 className="font-display font-semibold text-brown mb-3">Detail Pesanan</h2>
+            <h2 className="font-bold text-neutral-900 mb-3">Detail Pesanan</h2>
             <div className="space-y-2">
               {order.items.map((item, i) => (
                 <div key={i} className="flex justify-between text-sm">
-                  <span className="text-brown">
+                  <span className="text-neutral-700">
                     {item.productName}{' '}
-                    <span className="text-brown/50">x{item.quantity}</span>
+                    <span className="text-neutral-400">x{item.quantity}</span>
                   </span>
-                  <span className="font-semibold text-brown">{formatRupiah(item.subtotal)}</span>
+                  <span className="font-semibold text-neutral-800">{formatRupiah(item.subtotal)}</span>
                 </div>
               ))}
-              <div className="border-t border-brown/10 pt-2 mt-2 space-y-1">
-                <div className="flex justify-between text-sm text-brown/60">
+              <div className="border-t border-neutral-100 pt-2 mt-2 space-y-1">
+                <div className="flex justify-between text-sm text-neutral-400">
                   <span>Subtotal</span>
                   <span>{formatRupiah(order.subtotal)}</span>
                 </div>
                 {order.deliveryFee > 0 && (
-                  <div className="flex justify-between text-sm text-brown/60">
+                  <div className="flex justify-between text-sm text-neutral-400">
                     <span>Ongkir</span>
                     <span>{formatRupiah(order.deliveryFee)}</span>
                   </div>
                 )}
-                <div className="flex justify-between font-bold text-brown text-base pt-1">
+                <div className="flex justify-between font-bold text-neutral-900 text-base pt-1">
                   <span>Total</span>
                   <span className="text-primary">{formatRupiah(order.total)}</span>
                 </div>
@@ -188,9 +188,9 @@ export default function ConfirmationPage() {
 
         {/* Payment reminder */}
         {order.paymentStatus === 'unpaid' && (
-          <div className="bg-warning/10 border border-warning/30 rounded-input p-3">
-            <p className="text-sm font-semibold text-brown mb-0.5">💳 Segera Lakukan Pembayaran</p>
-            <p className="text-xs text-brown/60">
+          <div className="bg-warning/10 border border-warning/20 rounded-card p-3">
+            <p className="text-sm font-semibold text-neutral-800 mb-0.5">💳 Segera Lakukan Pembayaran</p>
+            <p className="text-xs text-neutral-500">
               Bayar via {PAYMENT_METHOD_LABELS[order.paymentMethod ?? 'qris']} dan kirim bukti pembayaran ke WhatsApp kami.
             </p>
           </div>

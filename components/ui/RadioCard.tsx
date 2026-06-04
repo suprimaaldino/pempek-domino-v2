@@ -28,11 +28,11 @@ export function RadioCard({
     <label
       htmlFor={id}
       className={cn(
-        'flex items-start gap-3 p-4 rounded-input border-2 cursor-pointer',
+        'flex items-center gap-3 px-4 py-3.5 rounded-input border cursor-pointer',
         'transition-all duration-150 select-none',
         checked
           ? 'border-primary bg-primary/5 shadow-sm'
-          : 'border-brown/20 bg-white hover:border-brown/40',
+          : 'border-neutral-200 bg-white hover:border-neutral-300',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
     >
@@ -46,21 +46,31 @@ export function RadioCard({
         disabled={disabled}
         className="sr-only"
       />
-      {/* Radio dot */}
+
+      {/* Custom radio dot */}
       <div
         className={cn(
-          'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5',
-          checked ? 'border-primary' : 'border-brown/30'
+          'w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center shrink-0',
+          checked ? 'border-primary' : 'border-neutral-300'
         )}
+        style={{ width: '18px', height: '18px' }}
       >
-        {checked && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+        {checked && <div className="w-2 h-2 rounded-full bg-primary" />}
       </div>
-      {icon && <div className="text-primary mt-0.5 shrink-0">{icon}</div>}
+
+      {icon && (
+        <div className={cn('shrink-0', checked ? 'text-primary' : 'text-neutral-400')}>
+          {icon}
+        </div>
+      )}
+
       <div className="flex-1 min-w-0">
-        <span className={cn('font-semibold text-brown block', checked && 'text-primary')}>
+        <span className={cn('text-sm font-semibold block', checked ? 'text-primary' : 'text-neutral-800')}>
           {label}
         </span>
-        {description && <span className="text-sm text-brown/60 block mt-0.5">{description}</span>}
+        {description && (
+          <span className="text-xs text-neutral-400 block mt-0.5">{description}</span>
+        )}
       </div>
     </label>
   );

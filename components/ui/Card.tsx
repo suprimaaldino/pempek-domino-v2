@@ -13,8 +13,8 @@ export function Card({ children, className, onClick, hoverable }: CardProps) {
     <div
       onClick={onClick}
       className={cn(
-        'bg-white rounded-card shadow-card border border-brown/5',
-        hoverable && 'cursor-pointer transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5',
+        'bg-white rounded-card shadow-card border border-neutral-100',
+        hoverable && 'cursor-pointer transition-all duration-200 hover:shadow-card-hover',
         onClick && 'cursor-pointer',
         className
       )}
@@ -38,8 +38,8 @@ export function CardHeader({ title, subtitle, icon, action, className }: CardHea
       <div className="flex items-center gap-2">
         {icon && <div className="text-primary">{icon}</div>}
         <div>
-          <h3 className="font-display font-semibold text-brown text-lg leading-tight">{title}</h3>
-          {subtitle && <p className="text-sm text-brown/60 mt-0.5">{subtitle}</p>}
+          <h3 className="font-bold text-neutral-900 text-base leading-tight">{title}</h3>
+          {subtitle && <p className="text-sm text-neutral-400 mt-0.5">{subtitle}</p>}
         </div>
       </div>
       {action && <div className="ml-2">{action}</div>}

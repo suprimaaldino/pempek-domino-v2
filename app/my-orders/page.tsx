@@ -18,7 +18,7 @@ import { getOrderByOrderNumber } from '@/lib/firestore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
-import { formatRupiah, formatDateId, DELIVERY_METHOD_LABELS } from '@/lib/utils';
+import { formatRupiah, formatDateId, DELIVERY_METHOD_LABELS, cn } from '@/lib/utils';
 import type { Order } from '@/types';
 
 // ─── Order Detail Card ─────────────────────────────────────────────────────────
@@ -27,10 +27,15 @@ function OrderDetailCard({ order }: { order: Order }) {
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="bg-white rounded-card shadow-card border border-brown/5 overflow-hidden">
+    <div
+      className={cn(
+        'bg-white rounded-card border transition-all duration-200 overflow-hidden',
+        expanded ? 'border-neutral-200 shadow-card' : 'border-neutral-100 shadow-sm'
+      )}
+    >
       {/* Header row */}
       <button
-        className="w-full text-left px-4 py-3 flex items-start justify-between gap-3 hover:bg-brown/5 transition-colors"
+        className="w-full text-left px-4 py-3 flex items-start justify-between gap-3 hover:bg-neutral-50 transition-colors"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
       >
@@ -42,34 +47,34 @@ function OrderDetailCard({ order }: { order: Order }) {
             <OrderStatusBadge status={order.status} />
             <PaymentStatusBadge status={order.paymentStatus} />
           </div>
-          <p className="text-xs text-brown/50">
+          <p className="text-xs text-neutral-400">
             {order.createdAt ? formatDateId(order.createdAt) : '—'}
           </p>
-          <p className="text-sm text-brown/70 mt-0.5 truncate">
+          <p className="text-sm text-neutral-500 mt-0.5 truncate">
             {order.items.map((i) => `${i.productName} x${i.quantity}`).join(', ')}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <p className="font-bold text-primary">{formatRupiah(order.total)}</p>
           {expanded ? (
-            <ChevronUp size={16} className="text-brown/40" />
+            <ChevronUp size={15} className="text-neutral-300" />
           ) : (
-            <ChevronDown size={16} className="text-brown/40" />
+            <ChevronDown size={15} className="text-neutral-300" />
           )}
         </div>
       </button>
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="px-4 pb-4 border-t border-brown/5 space-y-4 pt-3">
+        <div className="px-4 pb-4 border-t border-neutral-100 space-y-4 pt-3">
           {/* Customer info */}
-          <div className="bg-brown/5 rounded-input px-3 py-2">
-            <p className="text-xs text-brown/50 mb-0.5">Nama Pemesan</p>
-            <p className="text-sm font-semibold text-brown">{order.customerName}</p>
+          <div className="bg-neutral-50 rounded-input px-3 py-2">
+            <p className="text-xs text-neutral-400 mb-0.5">Nama Pemesan</p>
+            <p className="text-sm font-semibold text-neutral-800">{order.customerName}</p>
           </div>
 
           {/* Delivery */}
-          <div className="flex items-center gap-2 text-sm text-brown/70">
+          <div className="flex items-center gap-2 text-sm text-neutral-500">
             {order.deliveryMethod === 'delivery' ? (
               <Truck size={14} className="text-primary shrink-0" />
             ) : (
@@ -89,28 +94,28 @@ function OrderDetailCard({ order }: { order: Order }) {
 
           {/* Items */}
           <div className="space-y-1.5">
-            <p className="text-xs font-bold text-brown/40 uppercase tracking-wide">Detail Pesanan</p>
+            <p className="text-xs font-bold text-neutral-400 uppercase tracking-wide">Detail Pesanan</p>
             {order.items.map((item, i) => (
               <div key={i} className="flex justify-between text-sm">
-                <span className="text-brown">
+                <span className="text-neutral-700">
                   {item.productName}{' '}
-                  <span className="text-brown/50">x{item.quantity}</span>
+                  <span className="text-neutral-400">x{item.quantity}</span>
                 </span>
-                <span className="font-semibold text-brown">{formatRupiah(item.subtotal)}</span>
+                <span className="font-semibold text-neutral-800">{formatRupiah(item.subtotal)}</span>
               </div>
             ))}
-            <div className="border-t border-brown/5 pt-2 mt-1 space-y-0.5">
-              <div className="flex justify-between text-xs text-brown/50">
+            <div className="border-t border-neutral-100 pt-2 mt-1 space-y-0.5">
+              <div className="flex justify-between text-xs text-neutral-400">
                 <span>Subtotal</span>
                 <span>{formatRupiah(order.subtotal)}</span>
               </div>
               {order.deliveryFee > 0 && (
-                <div className="flex justify-between text-xs text-brown/50">
+                <div className="flex justify-between text-xs text-neutral-400">
                   <span>Ongkir</span>
                   <span>{formatRupiah(order.deliveryFee)}</span>
                 </div>
               )}
-              <div className="flex justify-between font-bold text-brown text-sm pt-1">
+              <div className="flex justify-between font-bold text-neutral-900 text-sm pt-1">
                 <span>Total</span>
                 <span className="text-primary">{formatRupiah(order.total)}</span>
               </div>
@@ -186,40 +191,36 @@ export default function MyOrdersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-cream pb-24">
+    <main className="min-h-screen bg-neutral-50 pb-24">
       {/* Header */}
-      <div className="bg-primary text-white px-4 pt-safe-top pb-6">
-        <div className="max-w-lg mx-auto pt-4">
-          <div className="flex items-center gap-3 mb-1">
+      <div className="bg-white border-b border-neutral-100 px-4 pt-safe-top pb-4">
+        <div className="max-w-lg mx-auto pt-3">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/order')}
               aria-label="Kembali"
-              className="p-2 rounded-full hover:bg-white/20 transition-colors"
+              className="p-1.5 rounded-full hover:bg-neutral-100 transition-colors"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} className="text-neutral-600" />
             </button>
-            <div className="flex items-center gap-2">
-              <ClipboardList size={20} />
-              <h1 className="font-display font-bold text-xl">Cek Pesanan</h1>
+            <div>
+              <h1 className="font-bold text-neutral-900 text-base leading-tight">Cek Pesanan</h1>
+              <p className="text-xs text-neutral-400">Masukkan nomor pesanan</p>
             </div>
           </div>
-          <p className="text-white/70 text-sm ml-11">
-            Masukkan nomor pesanan untuk melihat status
-          </p>
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 mt-6">
         {/* Security notice */}
-        <div className="flex items-start gap-2 bg-brown/5 border border-brown/10 rounded-card px-3 py-2.5 mb-5">
-          <ShieldAlert size={15} className="text-brown/40 shrink-0 mt-0.5" />
-          <p className="text-xs text-brown/50 leading-relaxed">
+        <div className="flex items-start gap-2 bg-white border border-neutral-100 rounded-card px-3 py-2.5 mb-4 shadow-card">
+          <ShieldAlert size={14} className="text-neutral-300 shrink-0 mt-0.5" />
+          <p className="text-xs text-neutral-400 leading-relaxed">
             Hanya pemesan yang tahu nomor pesanannya yang bisa melihat detail pesanan ini.
-            Nomor pesanan bisa dilihat di halaman konfirmasi setelah memesan.
           </p>
         </div>
 
-        <form onSubmit={handleSearch} className="mb-6 bg-white rounded-card shadow-card p-4 space-y-3">
+        <form onSubmit={handleSearch} className="mb-6 bg-white rounded-card shadow-card border border-neutral-100 p-4 space-y-3">
           <Input
             label="Nomor Pesanan"
             placeholder="Contoh: PD-20260604-001"
@@ -237,19 +238,19 @@ export default function MyOrdersPage() {
             disabled={!orderNumber.trim()}
             className="w-full"
           >
-            <Search size={16} />
+            <Search size={15} />
             Cek Pesanan
           </Button>
         </form>
 
         {/* Result: not found */}
         {order === null && !loading && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-full bg-brown/5 flex items-center justify-center mx-auto mb-4">
-              <PackageSearch size={32} className="text-brown/30" />
+          <div className="text-center py-14">
+            <div className="w-14 h-14 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+              <PackageSearch size={28} className="text-neutral-300" />
             </div>
-            <p className="text-brown/60 font-semibold mb-1">Pesanan tidak ditemukan</p>
-            <p className="text-brown/40 text-sm">
+            <p className="text-neutral-800 font-semibold mb-1">Pesanan tidak ditemukan</p>
+            <p className="text-neutral-400 text-sm">
               Pastikan nomor pesanan yang kamu masukkan sudah benar
             </p>
             <Button
@@ -267,10 +268,10 @@ export default function MyOrdersPage() {
 
         {/* CTA sebelum search */}
         {order === undefined && !loading && (
-          <div className="text-center py-8 text-brown/40">
-            <ClipboardList size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">Masukkan nomor pesanan untuk melihat statusnya</p>
-            <p className="text-xs mt-1 text-brown/30">
+          <div className="text-center py-10 text-neutral-400">
+            <ClipboardList size={36} className="mx-auto mb-3 opacity-20" />
+            <p className="text-sm font-medium">Masukkan nomor pesanan untuk melihat statusnya</p>
+            <p className="text-xs mt-1 text-neutral-300">
               Nomor pesanan tersedia di halaman konfirmasi (contoh: PD-20260604-001)
             </p>
           </div>

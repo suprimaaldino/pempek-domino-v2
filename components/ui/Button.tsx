@@ -15,21 +15,21 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-primary text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm',
+    'bg-primary text-white hover:bg-primary-600 active:bg-primary-700 shadow-sm',
   secondary:
-    'bg-secondary text-brown font-semibold hover:bg-secondary-600 active:bg-secondary-700 shadow-sm',
+    'bg-neutral-100 text-neutral-800 font-semibold hover:bg-neutral-200 active:bg-neutral-300',
   outline:
-    'border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-white active:bg-primary-700',
+    'border border-primary text-primary bg-transparent hover:bg-primary hover:text-white active:bg-primary-600',
   ghost:
-    'bg-transparent text-brown hover:bg-brown/10 active:bg-brown/20',
+    'bg-transparent text-neutral-600 hover:bg-neutral-100 active:bg-neutral-200',
   danger:
     'bg-error text-white hover:bg-red-700 active:bg-red-800 shadow-sm',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-sm rounded-badge',
-  md: 'px-5 py-2.5 text-base rounded-input',
-  lg: 'px-6 py-3.5 text-lg rounded-input',
+  sm: 'px-3.5 py-1.5 text-sm rounded-pill',
+  md: 'px-5 py-2.5 text-sm rounded-pill',
+  lg: 'px-6 py-3.5 text-base rounded-pill',
 };
 
 export function Button({
@@ -45,9 +45,9 @@ export function Button({
     <button
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 font-semibold',
-        'transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/50',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center gap-2 font-semibold tracking-tight',
+        'transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1',
+        'disabled:opacity-40 disabled:cursor-not-allowed',
         variantClasses[variant],
         sizeClasses[size],
         className
