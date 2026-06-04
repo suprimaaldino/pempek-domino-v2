@@ -171,20 +171,27 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
   if (activeMethod.methodType === 'dana' || activeMethod.methodType === 'ewallet') {
     return (
       <Card className="mt-3 border border-secondary/30">
-        <CardBody className="flex flex-col items-center gap-2">
+        <CardBody className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-brown font-semibold">
             <Smartphone size={18} className="text-primary" />
             {activeMethod.name}
           </div>
-          <div className="text-center">
-            <p className="text-xs text-brown/50 font-semibold mb-1">{activeMethod.provider}</p>
-            <p className="text-2xl font-bold text-primary tracking-wider">
-              {activeMethod.accountNumber || '(belum diisi)'}
-            </p>
+          <div className="bg-cream rounded-input p-3 space-y-1.5">
+            <div className="flex justify-between text-sm">
+              <span className="text-brown/60">E-Wallet</span>
+              <span className="font-semibold text-brown">{activeMethod.provider || '-'}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-brown/60">No. Account</span>
+              <span className="font-bold text-primary text-base tracking-wider">
+                {activeMethod.accountNumber || '-'}
+              </span>
+            </div>
             {activeMethod.accountName && (
-              <p className="text-sm font-semibold text-brown/70 mt-1">
-                a.n. {activeMethod.accountName}
-              </p>
+              <div className="flex justify-between text-sm">
+                <span className="text-brown/60">Atas Nama</span>
+                <span className="font-semibold text-brown">{activeMethod.accountName}</span>
+              </div>
             )}
           </div>
           <p className="text-xs text-brown/60 text-center">
