@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Truck, MapPin, Smartphone, Building2, QrCode, ShieldCheck, ClipboardList, Upload, Menu } from 'lucide-react';
+import { Truck, MapPin, Smartphone, Building2, QrCode, ShieldCheck, ClipboardList, Upload } from 'lucide-react';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import appleIcon from '../apple-icon.png';
 import { Input, Textarea } from '@/components/ui/Input';
@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/order/ProductCard';
 import { OrderSummarySheet } from '@/components/order/OrderSummarySheet';
 import { PaymentPreview } from '@/components/order/PaymentPreview';
-import { CustomerSidebar } from '@/components/order/CustomerSidebar';
+import { CustomerNavbar } from '@/components/order/CustomerNavbar';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useOrderStore } from '@/store/orderStore';
@@ -63,7 +63,6 @@ export default function OrderPage() {
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [paymentProofUrl, setPaymentProofUrl] = useState<string>('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const {
     register,
@@ -177,23 +176,15 @@ export default function OrderPage() {
       {/* Header */}
       <div className="bg-primary text-white px-4 pt-safe-top pb-6">
         <div className="max-w-lg mx-auto pt-4">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-3">
-              <Image src={appleIcon} alt="Logo Pempek Domino" width={24} height={24} className="rounded-md" />
-              <h1 className="font-display font-bold text-xl">Pempek Domino</h1>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 rounded-full hover:bg-white/10 transition-colors text-white"
-              aria-label="Menu"
-            >
-              <Menu size={20} />
-            </button>
+          <div className="flex items-center gap-3 mb-1">
+            <Image src={appleIcon} alt="Logo Pempek Domino" width={24} height={24} className="rounded-md" />
+            <h1 className="font-display font-bold text-xl">Pempek Domino</h1>
           </div>
           <p className="text-white/70 text-sm">Pesan Pempek Palembang, Nikmat di Mana Saja</p>
         </div>
       </div>
+
+      <CustomerNavbar />
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="max-w-lg mx-auto px-4 space-y-6 mt-6">
@@ -379,7 +370,6 @@ export default function OrderPage() {
 
         <OrderSummarySheet onSubmit={handleSubmit(onSubmit)} loading={submitting} />
       </form>
-      <CustomerSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
     </main>
   );
 }

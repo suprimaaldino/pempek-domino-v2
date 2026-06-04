@@ -112,7 +112,7 @@ export function CustomerSidebar({ isOpen, onClose }: CustomerSidebarProps) {
           </div>
           <div className="flex items-center gap-2 text-xs text-brown/50">
             <Phone size={14} className="shrink-0" />
-            <p>WhatsApp: 0812-7100-2444</p>
+            <p>WhatsApp: 0817-7640-0024</p>
           </div>
         </div>
       </div>
