@@ -13,10 +13,11 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
-    // Orders: Public create, Admin read/write/delete
+    // Orders: Public create/get for confirmation page, Admin list/write/delete
     match /orders/{orderId} {
       allow create: if true;
-      allow read, update, delete: if isAuthenticated();
+      allow get: if true;
+      allow list, update, delete: if isAuthenticated();
     }
 
     // Counters: Public read/write (untuk order number generator)
@@ -36,9 +37,10 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
-    // Settings: Admin only
+    // Settings: Public read for customer-facing business info, Admin write
     match /settings/{settingId} {
-      allow read, write: if isAuthenticated();
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
   }
 }
