@@ -198,10 +198,38 @@ export default function OrderPage() {
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="max-w-lg mx-auto px-4 space-y-6 mt-6">
 
-          {/* Section 1: Data Pemesan */}
+          {/* Section 1: Pilih Menu */}
+          <section aria-labelledby="section-menu">
+            <h2 id="section-menu" className="font-display font-bold text-brown text-lg mb-3">
+              1. Pilih Menu
+            </h2>
+
+            {productsLoading ? (
+              <SkeletonList count={3} />
+            ) : (
+              categoryKeys.map((cat) => {
+                const prods = grouped[cat];
+                if (!prods.length) return null;
+                return (
+                  <div key={cat} className="mb-6">
+                    <h3 className="font-semibold text-brown/70 text-sm uppercase tracking-wide mb-2">
+                      {CATEGORY_LABELS[cat]}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {prods.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </section>
+
+          {/* Section 2: Data Pemesan */}
           <section aria-labelledby="section-pemesan">
             <h2 id="section-pemesan" className="font-display font-bold text-brown text-lg mb-3">
-              1. Data Pemesan
+              2. Data Pemesan
             </h2>
             <div className="bg-white rounded-card shadow-card p-4 space-y-4">
               <Input
@@ -233,10 +261,10 @@ export default function OrderPage() {
             </div>
           </section>
 
-          {/* Section 2: Pilihan Pengiriman */}
+          {/* Section 3: Pilihan Pengiriman */}
           <section aria-labelledby="section-pengiriman">
             <h2 id="section-pengiriman" className="font-display font-bold text-brown text-lg mb-3">
-              2. Pilihan Pengiriman
+              3. Pilihan Pengiriman
             </h2>
             <div className="space-y-2">
               <RadioCard
@@ -290,10 +318,10 @@ export default function OrderPage() {
             </div>
           </section>
 
-          {/* Section 3: Metode Pembayaran */}
+          {/* Section 4: Metode Pembayaran */}
           <section aria-labelledby="section-pembayaran">
             <h2 id="section-pembayaran" className="font-display font-bold text-brown text-lg mb-3">
-              3. Metode Pembayaran
+              4. Metode Pembayaran
             </h2>
             <div className="space-y-2">
               {(paymentConfig?.methods?.filter(m => m.isActive) || [
@@ -345,34 +373,6 @@ export default function OrderPage() {
               />
               <p className="text-xs text-brown/50 mt-2">Upload sekarang atau kirim via WhatsApp setelah pesan dibuat.</p>
             </div>
-          </section>
-
-          {/* Section 4: Pilih Menu */}
-          <section aria-labelledby="section-menu">
-            <h2 id="section-menu" className="font-display font-bold text-brown text-lg mb-3">
-              4. Pilih Menu
-            </h2>
-
-            {productsLoading ? (
-              <SkeletonList count={3} />
-            ) : (
-              categoryKeys.map((cat) => {
-                const prods = grouped[cat];
-                if (!prods.length) return null;
-                return (
-                  <div key={cat} className="mb-6">
-                    <h3 className="font-semibold text-brown/70 text-sm uppercase tracking-wide mb-2">
-                      {CATEGORY_LABELS[cat]}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {prods.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })
-            )}
           </section>
 
         </div>
