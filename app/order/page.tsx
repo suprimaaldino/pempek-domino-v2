@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Truck, MapPin, Smartphone, Building2, QrCode, ShieldCheck, ClipboardList, Upload } from 'lucide-react';
+import { Truck, MapPin, Smartphone, Building2, QrCode, ShieldCheck, ClipboardList, Upload, Menu } from 'lucide-react';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import appleIcon from '../apple-icon.png';
 import { Input, Textarea } from '@/components/ui/Input';
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/order/ProductCard';
 import { OrderSummarySheet } from '@/components/order/OrderSummarySheet';
 import { PaymentPreview } from '@/components/order/PaymentPreview';
+import { CustomerSidebar } from '@/components/order/CustomerSidebar';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useOrderStore } from '@/store/orderStore';
@@ -62,6 +63,7 @@ export default function OrderPage() {
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [paymentProofUrl, setPaymentProofUrl] = useState<string>('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const {
     register,
@@ -180,24 +182,14 @@ export default function OrderPage() {
               <Image src={appleIcon} alt="Logo Pempek Domino" width={24} height={24} className="rounded-md" />
               <h1 className="font-display font-bold text-xl">Pempek Domino</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <Link
-                href="/my-orders"
-                className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors text-xs py-1 px-2 rounded-lg hover:bg-white/10"
-                aria-label="Pesanan Saya"
-              >
-                <ClipboardList size={14} />
-                <span>Pesanan Saya</span>
-              </Link>
-              <Link
-                href="/admin/login"
-                className="flex items-center gap-1.5 text-white/40 hover:text-white/80 transition-colors text-xs py-1 px-2 rounded-lg hover:bg-white/10"
-                aria-label="Masuk sebagai admin"
-              >
-                <ShieldCheck size={14} />
-                <span>Admin</span>
-              </Link>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 rounded-full hover:bg-white/10 transition-colors text-white"
+              aria-label="Menu"
+            >
+              <Menu size={20} />
+            </button>
           </div>
           <p className="text-white/70 text-sm">Pesan Pempek Palembang, Nikmat di Mana Saja</p>
         </div>
@@ -387,6 +379,7 @@ export default function OrderPage() {
 
         <OrderSummarySheet onSubmit={handleSubmit(onSubmit)} loading={submitting} />
       </form>
+      <CustomerSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
     </main>
   );
 }

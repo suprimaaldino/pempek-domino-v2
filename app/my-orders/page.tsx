@@ -12,6 +12,7 @@ import {
   Clock,
   ArrowLeft,
   PackageSearch,
+  Menu,
 } from 'lucide-react';
 import { getCustomerOrders } from '@/lib/firestore';
 import { Input } from '@/components/ui/Input';
@@ -20,6 +21,7 @@ import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
 import { formatRupiah, formatDateId, normalizePhone, DELIVERY_METHOD_LABELS } from '@/lib/utils';
 import type { Order } from '@/types';
 import { cn } from '@/lib/utils';
+import { CustomerSidebar } from '@/components/order/CustomerSidebar';
 
 // ─── Order Card ────────────────────────────────────────────────────────────────
 
@@ -154,6 +156,7 @@ export default function MyOrdersPage() {
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [error, setError] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -184,18 +187,27 @@ export default function MyOrdersPage() {
       {/* Header */}
       <div className="bg-primary text-white px-4 pt-safe-top pb-6">
         <div className="max-w-lg mx-auto pt-4">
-          <div className="flex items-center gap-3 mb-1">
-            <button
-              onClick={() => router.push('/order')}
-              aria-label="Kembali"
-              className="p-2 rounded-full hover:bg-white/20 transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div className="flex items-center gap-2">
-              <ClipboardList size={20} />
-              <h1 className="font-display font-bold text-xl">Pesanan Saya</h1>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push('/order')}
+                aria-label="Kembali"
+                className="p-2 rounded-full hover:bg-white/20 transition-colors"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <div className="flex items-center gap-2">
+                <ClipboardList size={20} />
+                <h1 className="font-display font-bold text-xl">Pesanan Saya</h1>
+              </div>
             </div>
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 rounded-full hover:bg-white/20 transition-colors"
+              aria-label="Menu"
+            >
+              <Menu size={20} />
+            </button>
           </div>
           <p className="text-white/70 text-sm ml-11">
             Cek status pesanan dengan nomor WhatsApp
@@ -278,6 +290,7 @@ export default function MyOrdersPage() {
           </div>
         )}
       </div>
+      <CustomerSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
     </main>
   );
 }
