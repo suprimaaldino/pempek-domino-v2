@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/order/ProductCard';
 import { OrderSummarySheet } from '@/components/order/OrderSummarySheet';
 import { PaymentPreview } from '@/components/order/PaymentPreview';
-import { CustomerNavbar } from '@/components/order/CustomerNavbar';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useOrderStore } from '@/store/orderStore';
@@ -183,8 +182,6 @@ export default function OrderPage() {
           <p className="text-white/70 text-sm">Pesan Pempek Palembang, Nikmat di Mana Saja</p>
         </div>
       </div>
-
-      <CustomerNavbar />
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="max-w-lg mx-auto px-4 space-y-6 mt-6">

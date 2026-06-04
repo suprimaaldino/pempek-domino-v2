@@ -17,7 +17,7 @@ export function OrderSummarySheet({ onSubmit, loading }: OrderSummarySheetProps)
   if (itemCount === 0) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-brown/10 shadow-card-lg px-4 py-3 safe-area-pb">
+    <div className="fixed bottom-[calc(53px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-30 bg-white border-t border-brown/10 shadow-card-lg px-4 py-3">
       <div className="max-w-lg mx-auto">
         {/* Totals */}
         <div className="flex items-center justify-between mb-3">

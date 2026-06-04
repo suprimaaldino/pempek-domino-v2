@@ -251,6 +251,18 @@ export async function getCustomerOrders(whatsappNumber: string): Promise<Order[]
   return snap.docs.map((d) => docToOrder(d.id, d.data()));
 }
 
+export async function getOrderByOrderNumber(orderNumber: string): Promise<Order | null> {
+  const q = query(
+    collection(db, 'orders'),
+    where('orderNumber', '==', orderNumber.toUpperCase().trim()),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return docToOrder(d.id, d.data());
+}
+
 // ─── Payment Config ───────────────────────────────────────────────────────────
 
 export async function getPaymentConfig(): Promise<PaymentConfig | null> {

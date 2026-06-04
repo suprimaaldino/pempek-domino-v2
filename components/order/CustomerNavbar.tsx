@@ -10,7 +10,7 @@ export function CustomerNavbar() {
 
   const navItems = [
     {
-      label: 'Pesan Pempek',
+      label: 'Pesan',
       href: '/order',
       icon: ShoppingBag,
     },
@@ -27,8 +27,8 @@ export function CustomerNavbar() {
   ];
 
   return (
-    <div className="bg-white border-b border-brown/10 sticky top-0 z-30 shadow-xs">
-      <div className="max-w-lg mx-auto flex">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-brown/10 shadow-card-lg safe-area-pb">
+      <div className="max-w-lg mx-auto flex items-center justify-around px-2 py-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -39,18 +39,16 @@ export function CustomerNavbar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex-1 py-3 flex items-center justify-center gap-1.5 text-xs font-bold border-b-2 transition-all duration-200',
-                isActive
-                  ? 'border-primary text-primary bg-primary/[0.02]'
-                  : 'border-transparent text-brown/50 hover:text-brown/80 hover:bg-brown/[0.01]'
+                'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-150',
+                isActive ? 'text-primary' : 'text-brown/50 hover:text-brown/80'
               )}
             >
-              <Icon size={14} className={isActive ? 'text-primary' : 'text-brown/40'} />
-              <span>{item.label}</span>
+              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+              <span className="text-[10px] font-semibold">{item.label}</span>
             </Link>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }

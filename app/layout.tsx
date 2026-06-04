@@ -32,6 +32,8 @@ export const viewport: Viewport = {
   themeColor: '#8B1E1E',
 };
 
+import { BottomNav } from '@/components/BottomNav';
+
 export default function RootLayout({
   children,
 }: {
@@ -47,6 +49,7 @@ export default function RootLayout({
         <ToastProvider>
           <PWAUpdateBanner />
           {children}
+          <BottomNav />
         </ToastProvider>
       </body>
     </html>

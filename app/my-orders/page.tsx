@@ -12,20 +12,19 @@ import {
   Clock,
   ArrowLeft,
   PackageSearch,
+  ShieldAlert,
 } from 'lucide-react';
-import { getCustomerOrders } from '@/lib/firestore';
+import { getOrderByOrderNumber } from '@/lib/firestore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
-import { formatRupiah, formatDateId, normalizePhone, DELIVERY_METHOD_LABELS } from '@/lib/utils';
+import { formatRupiah, formatDateId, DELIVERY_METHOD_LABELS } from '@/lib/utils';
 import type { Order } from '@/types';
-import { cn } from '@/lib/utils';
-import { CustomerNavbar } from '@/components/order/CustomerNavbar';
 
-// ─── Order Card ────────────────────────────────────────────────────────────────
+// ─── Order Detail Card ─────────────────────────────────────────────────────────
 
-function OrderCard({ order }: { order: Order }) {
-  const [expanded, setExpanded] = useState(false);
+function OrderDetailCard({ order }: { order: Order }) {
+  const [expanded, setExpanded] = useState(true);
 
   return (
     <div className="bg-white rounded-card shadow-card border border-brown/5 overflow-hidden">
@@ -63,6 +62,12 @@ function OrderCard({ order }: { order: Order }) {
       {/* Expanded detail */}
       {expanded && (
         <div className="px-4 pb-4 border-t border-brown/5 space-y-4 pt-3">
+          {/* Customer info */}
+          <div className="bg-brown/5 rounded-input px-3 py-2">
+            <p className="text-xs text-brown/50 mb-0.5">Nama Pemesan</p>
+            <p className="text-sm font-semibold text-brown">{order.customerName}</p>
+          </div>
+
           {/* Delivery */}
           <div className="flex items-center gap-2 text-sm text-brown/70">
             {order.deliveryMethod === 'delivery' ? (
@@ -151,28 +156,28 @@ function OrderCard({ order }: { order: Order }) {
 
 export default function MyOrdersPage() {
   const router = useRouter();
-  const [phone, setPhone] = useState('');
+  const [orderNumber, setOrderNumber] = useState('');
   const [loading, setLoading] = useState(false);
-  const [orders, setOrders] = useState<Order[] | null>(null);
+  const [order, setOrder] = useState<Order | null | undefined>(undefined);
   const [error, setError] = useState('');
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (!phone.trim()) return;
-
-    const normalized = normalizePhone(phone.trim());
-    if (!normalized) {
-      setError('Format nomor tidak valid. Gunakan: 08xxxxxxxxxx atau +62xxxxxxxxx');
-      return;
-    }
+    const trimmed = orderNumber.trim();
+    if (!trimmed) return;
 
     setLoading(true);
     setError('');
-    setOrders(null);
+    setOrder(undefined);
 
     try {
-      const result = await getCustomerOrders(normalized);
-      setOrders(result);
+      const result = await getOrderByOrderNumber(trimmed);
+      if (!result) {
+        setOrder(null);
+        setError('');
+      } else {
+        setOrder(result);
+      }
     } catch {
       setError('Gagal memuat data. Periksa koneksi internet kamu.');
     } finally {
@@ -181,7 +186,7 @@ export default function MyOrdersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-cream">
+    <main className="min-h-screen bg-cream pb-24">
       {/* Header */}
       <div className="bg-primary text-white px-4 pt-safe-top pb-6">
         <div className="max-w-lg mx-auto pt-4">
@@ -195,89 +200,79 @@ export default function MyOrdersPage() {
             </button>
             <div className="flex items-center gap-2">
               <ClipboardList size={20} />
-              <h1 className="font-display font-bold text-xl">Pesanan Saya</h1>
+              <h1 className="font-display font-bold text-xl">Cek Pesanan</h1>
             </div>
           </div>
           <p className="text-white/70 text-sm ml-11">
-            Cek status pesanan dengan nomor WhatsApp
+            Masukkan nomor pesanan untuk melihat status
           </p>
         </div>
       </div>
 
-      <CustomerNavbar />
+      <div className="max-w-lg mx-auto px-4 mt-6">
+        {/* Security notice */}
+        <div className="flex items-start gap-2 bg-brown/5 border border-brown/10 rounded-card px-3 py-2.5 mb-5">
+          <ShieldAlert size={15} className="text-brown/40 shrink-0 mt-0.5" />
+          <p className="text-xs text-brown/50 leading-relaxed">
+            Hanya pemesan yang tahu nomor pesanannya yang bisa melihat detail pesanan ini.
+            Nomor pesanan bisa dilihat di halaman konfirmasi setelah memesan.
+          </p>
+        </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        {/* Search form */}
-        <form onSubmit={handleSearch} className="bg-white rounded-card shadow-card p-4 space-y-3">
+        <form onSubmit={handleSearch} className="mb-6 bg-white rounded-card shadow-card p-4 space-y-3">
           <Input
-            label="Nomor WhatsApp"
-            placeholder="08xxxxxxxxxx atau +62xxxxxxxxx"
-            type="tel"
-            inputMode="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            label="Nomor Pesanan"
+            placeholder="Contoh: PD-20260604-001"
+            value={orderNumber}
+            onChange={(e) => {
+              setOrderNumber(e.target.value);
+              setError('');
+            }}
             error={error}
-            helperText="Masukkan nomor yang sama saat memesan"
+            helperText="Nomor pesanan ada di halaman konfirmasi setelah kamu memesan"
           />
           <Button
             type="submit"
             loading={loading}
-            disabled={!phone.trim()}
+            disabled={!orderNumber.trim()}
             className="w-full"
           >
             <Search size={16} />
-            Cari Pesanan
+            Cek Pesanan
           </Button>
         </form>
 
-        {/* Results */}
-        {orders !== null && (
-          <div className="space-y-4">
-            {/* Summary chips */}
-            <div className="flex flex-wrap gap-2">
-              <div className="bg-white rounded-badge border border-brown/5 px-3 py-1.5 flex items-center gap-1.5 shadow-sm">
-                <ClipboardList size={14} className="text-primary" />
-                <span className="text-xs font-semibold text-brown">{orders.length} Pesanan</span>
-              </div>
-              {orders.filter(o => o.paymentStatus === 'unpaid').length > 0 && (
-                <div className="bg-warning/10 rounded-badge border border-warning/30 px-3 py-1.5 flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-brown/70">
-                    {orders.filter(o => o.paymentStatus === 'unpaid').length} Belum Bayar
-                  </span>
-                </div>
-              )}
+        {/* Result: not found */}
+        {order === null && !loading && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 rounded-full bg-brown/5 flex items-center justify-center mx-auto mb-4">
+              <PackageSearch size={32} className="text-brown/30" />
             </div>
-
-            {orders.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 rounded-full bg-brown/5 flex items-center justify-center mx-auto mb-4">
-                  <PackageSearch size={32} className="text-brown/30" />
-                </div>
-                <p className="text-brown/60 font-semibold mb-1">Belum ada pesanan</p>
-                <p className="text-brown/40 text-sm">Nomor WhatsApp ini belum pernah memesan</p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => router.push('/order')}
-                >
-                  Buat Pesanan Pertama
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {orders.map((order) => (
-                  <OrderCard key={order.id} order={order} />
-                ))}
-              </div>
-            )}
+            <p className="text-brown/60 font-semibold mb-1">Pesanan tidak ditemukan</p>
+            <p className="text-brown/40 text-sm">
+              Pastikan nomor pesanan yang kamu masukkan sudah benar
+            </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => router.push('/order')}
+            >
+              Buat Pesanan Baru
+            </Button>
           </div>
         )}
 
+        {/* Result: found */}
+        {order && <OrderDetailCard order={order} />}
+
         {/* CTA sebelum search */}
-        {orders === null && !loading && (
+        {order === undefined && !loading && (
           <div className="text-center py-8 text-brown/40">
             <ClipboardList size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">Masukkan nomor WhatsApp untuk melihat pesananmu</p>
+            <p className="text-sm">Masukkan nomor pesanan untuk melihat statusnya</p>
+            <p className="text-xs mt-1 text-brown/30">
+              Nomor pesanan tersedia di halaman konfirmasi (contoh: PD-20260604-001)
+            </p>
           </div>
         )}
       </div>
