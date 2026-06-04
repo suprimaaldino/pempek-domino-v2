@@ -5,7 +5,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Lock, User, UtensilsCrossed, Eye, EyeOff } from 'lucide-react';
+import Image from 'next/image';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -53,9 +55,16 @@ export default function AdminLoginPage() {
   return (
     <main className="min-h-screen bg-cream flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl overflow-hidden bg-primary flex items-center justify-center mx-auto mb-4 shadow-card">
-            <img src="/icon.png" alt="Logo" className="w-full h-full object-cover" />
+        <div className="text-center mb-8 flex flex-col items-center justify-center">
+          <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-card mb-4 relative bg-white flex items-center justify-center">
+            <Image
+              src="/icons/icon-192.png"
+              alt="Logo Pempek Domino"
+              width={80}
+              height={80}
+              className="object-contain p-1"
+              priority
+            />
           </div>
           <h1 className="font-display font-bold text-2xl text-brown">Pempek Domino</h1>
           <p className="text-brown/50 text-sm">Masuk ke Panel Admin</p>
@@ -97,6 +106,15 @@ export default function AdminLoginPage() {
             </form>
           </CardBody>
         </Card>
+
+        <div className="text-center mt-4">
+          <Link
+            href="/order"
+            className="text-xs font-semibold text-primary hover:underline transition-all inline-flex items-center gap-1"
+          >
+            &larr; Kembali ke Menu Pemesanan
+          </Link>
+        </div>
 
         <p className="text-center text-xs text-brown/40 mt-8">
           &copy; {new Date().getFullYear()} Pempek Domino. All rights reserved.

@@ -24,13 +24,6 @@ export async function loginAdmin(
   const expectedUsername = process.env.NEXT_PUBLIC_ADMIN_USERNAME || 'yangpunyapempekdomino';
   const passwordHash = process.env.NEXT_PUBLIC_ADMIN_PASSWORD_HASH || '';
 
-  console.log('Login attempt:', {
-    username,
-    expectedUsername,
-    hasPasswordHash: !!passwordHash,
-    passwordHash,
-  });
-
   if (username !== expectedUsername) {
     console.error('Username mismatch');
     throw new Error('Username atau password salah.');

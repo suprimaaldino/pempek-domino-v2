@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CheckCircle2, MessageCircle, RefreshCcw, Truck, MapPin, Clock, ClipboardList } from 'lucide-react';
+import { CheckCircle2, MessageCircle, RefreshCcw, Truck, MapPin, Clock, ClipboardList, Copy, Check } from 'lucide-react';
 import { getOrder } from '@/lib/firestore';
 import { getBusinessSettings } from '@/lib/firestore';
 import { formatRupiah, formatDateId, formatWhatsApp, generateWhatsAppLink, PAYMENT_METHOD_LABELS, DELIVERY_METHOD_LABELS } from '@/lib/utils';
@@ -18,6 +18,7 @@ export default function ConfirmationPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -29,6 +30,14 @@ export default function ConfirmationPage() {
     }).catch(console.error)
       .finally(() => setLoading(false));
   }, [orderId]);
+
+  const handleCopy = () => {
+    if (order) {
+      navigator.clipboard.writeText(order.orderNumber);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const buildWhatsAppMessage = (ord: Order): string => {
     const lines = [
@@ -91,9 +100,24 @@ export default function ConfirmationPage() {
           </div>
           <h1 className="font-bold text-2xl mb-1">Pesanan Masuk!</h1>
           <p className="text-white/70 text-sm">Kami akan segera memproses pesananmu</p>
-          <div className="mt-4 bg-white/10 rounded-xl px-5 py-2.5 inline-block">
-            <p className="text-white/60 text-xs mb-0.5">No. Pesanan</p>
-            <p className="font-mono font-bold text-lg tracking-wide">{order.orderNumber}</p>
+          <div className="mt-4 bg-white/10 rounded-xl px-5 py-2.5 inline-block relative">
+            <p className="text-white/60 text-xs mb-1">No. Pesanan (Salin untuk Cek Status)</p>
+            <div className="flex items-center gap-2 justify-center">
+              <span className="font-mono font-bold text-lg tracking-wide">{order.orderNumber}</span>
+              <button
+                onClick={handleCopy}
+                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 active:scale-95 transition-all text-white flex items-center justify-center"
+                title="Salin No. Pesanan"
+                type="button"
+              >
+                {copied ? <Check size={14} className="text-green-300 animate-pulse" /> : <Copy size={14} />}
+              </button>
+            </div>
+            {copied && (
+              <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-green-300 bg-neutral-900/80 px-2 py-0.5 rounded shadow-sm">
+                Berhasil disalin!
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -204,15 +228,20 @@ export default function ConfirmationPage() {
               Bagikan ke WhatsApp
             </Button>
           </a>
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full"
-            onClick={() => router.push('/my-orders')}
-          >
-            <ClipboardList size={18} />
-            Cek Status Pesanan
-          </Button>
+          <div className="space-y-1.5">
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full"
+              onClick={() => router.push('/my-orders')}
+            >
+              <ClipboardList size={18} />
+              Cek Status Pesanan
+            </Button>
+            <p className="text-[11px] text-center text-neutral-400 leading-normal px-2">
+              💡 Salin <b>No. Pesanan</b> di atas terlebih dahulu, kemudian klik tombol ini untuk memantau status pesananmu secara real-time.
+            </p>
+          </div>
           <Button
             variant="ghost"
             size="lg"
