@@ -98,8 +98,8 @@ export function AdminSidebar() {
         className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-brown/10 shadow-card-lg safe-area-pb"
         aria-label="Navigasi bawah"
       >
-        <div className="flex items-center justify-around px-2 py-1">
-          {NAV_ITEMS.slice(0, 4).map(({ href, label, icon: Icon }) => {
+        <div className="flex items-center justify-around px-1.5 py-1">
+          {NAV_ITEMS.slice(0, 6).map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href);
             return (
               <Link
