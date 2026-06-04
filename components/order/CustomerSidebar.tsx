@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { X, ClipboardList, ShieldCheck, ShoppingBag, Info, Phone } from 'lucide-react';
-import appleIcon from '@/app/apple-icon.png';
+// use public high-res icon to ensure sharp logo
 import { cn } from '@/lib/utils';
 
 interface CustomerSidebarProps {
@@ -55,13 +55,13 @@ export function CustomerSidebar({ isOpen, onClose }: CustomerSidebarProps) {
         {/* Header */}
         <div className="bg-primary text-white p-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Image
-              src={appleIcon}
-              alt="Logo Pempek Domino"
-              width={28}
-              height={28}
-              className="rounded-md bg-white p-0.5"
-            />
+              <Image
+                src="/icons/icon-192.png"
+                alt="Logo Pempek Domino"
+                width={28}
+                height={28}
+                className="rounded-md bg-white p-0.5 object-contain"
+              />
             <div>
               <h2 className="font-display font-bold text-base leading-tight">Pempek Domino</h2>
               <p className="text-[10px] text-white/70">Pesan Pempek Palembang</p>

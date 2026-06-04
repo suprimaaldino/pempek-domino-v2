@@ -176,8 +176,8 @@ export default function OrderPage() {
       <div className="bg-white border-b border-neutral-100 px-4 pt-safe-top pb-4">
         <div className="max-w-lg mx-auto pt-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
-              <Image src={appleIcon} alt="Logo Pempek Domino" width={32} height={32} className="w-full h-full object-cover" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 flex items-center justify-center bg-white">
+              <Image src="/icons/icon-192.png" alt="Logo Pempek Domino" width={32} height={32} className="w-full h-full object-contain p-1" />
             </div>
             <div>
               <h1 className="font-bold text-neutral-900 text-base leading-tight">Pempek Domino</h1>
