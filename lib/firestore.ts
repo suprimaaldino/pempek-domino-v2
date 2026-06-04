@@ -127,6 +127,10 @@ export async function createOrder(
     createdAt: now,
     updatedAt: now,
   });
+  await setDoc(doc(db, 'orderLookups', data.orderNumber.toUpperCase().trim()), {
+    orderId: ref.id,
+    createdAt: now,
+  });
   return ref.id;
 }
 
@@ -252,15 +256,14 @@ export async function getCustomerOrders(whatsappNumber: string): Promise<Order[]
 }
 
 export async function getOrderByOrderNumber(orderNumber: string): Promise<Order | null> {
-  const q = query(
-    collection(db, 'orders'),
-    where('orderNumber', '==', orderNumber.toUpperCase().trim()),
-    limit(1)
-  );
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  const d = snap.docs[0];
-  return docToOrder(d.id, d.data());
+  const normalized = orderNumber.toUpperCase().trim();
+  const lookupSnap = await getDoc(doc(db, 'orderLookups', normalized));
+  if (!lookupSnap.exists()) return null;
+
+  const orderId = lookupSnap.data().orderId as string | undefined;
+  if (!orderId) return null;
+
+  return getOrder(orderId);
 }
 
 // ─── Payment Config ───────────────────────────────────────────────────────────

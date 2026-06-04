@@ -147,7 +147,7 @@ function OrderDetailCard({ order }: { order: Order }) {
           {order.paymentStatus === 'unpaid' && !order.paymentProofUrl && (
             <div className="bg-warning/10 border border-warning/30 rounded-input px-3 py-2">
               <p className="text-xs font-semibold text-brown">
-                💳 Belum ada bukti pembayaran. Kirim bukti transfer ke WhatsApp kami.
+                Informasi pembayaran tersedia di halaman konfirmasi. Abaikan jika sudah dibayar.
               </p>
             </div>
           )}

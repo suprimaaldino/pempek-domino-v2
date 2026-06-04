@@ -48,7 +48,7 @@ export default function ConfirmationPage() {
       `📱 *WhatsApp:* ${formatWhatsApp(ord.whatsappNumber)}`,
       ``,
       `📦 *Detail Pesanan:*`,
-      ...ord.items.map((i) => `• ${i.productName} x${i.quantity} = ${formatRupiah(i.subtotal)}`),
+      ...ord.items.map((i) => `* ${i.productName} x${i.quantity} = ${formatRupiah(i.subtotal)}`),
       ``,
       `💳 *Pembayaran:* ${PAYMENT_METHOD_LABELS[ord.paymentMethod ?? 'qris']}`,
       `🚚 *Pengiriman:* ${DELIVERY_METHOD_LABELS[ord.deliveryMethod]}`,
@@ -213,9 +213,9 @@ export default function ConfirmationPage() {
         {/* Payment reminder */}
         {order.paymentStatus === 'unpaid' && (
           <div className="bg-warning/10 border border-warning/20 rounded-card p-3">
-            <p className="text-sm font-semibold text-neutral-800 mb-0.5">💳 Segera Lakukan Pembayaran</p>
+            <p className="text-sm font-semibold text-neutral-800 mb-0.5">Informasi Pembayaran</p>
             <p className="text-xs text-neutral-500">
-              Bayar via {PAYMENT_METHOD_LABELS[order.paymentMethod ?? 'qris']} dan kirim bukti pembayaran ke WhatsApp kami.
+              Jika pembayaran belum selesai, gunakan {PAYMENT_METHOD_LABELS[order.paymentMethod ?? 'qris']} lalu kirim bukti pembayaran ke WhatsApp kami. Abaikan jika sudah dibayar.
             </p>
           </div>
         )}

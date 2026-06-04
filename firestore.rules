@@ -20,6 +20,12 @@ service cloud.firestore {
       allow list, update, delete: if isAuthenticated();
     }
 
+    // Order lookup: Public create/get for checking status by order number
+    match /orderLookups/{orderNumber} {
+      allow create, get: if true;
+      allow list, update, delete: if isAuthenticated();
+    }
+
     // Counters: Public read/write (untuk order number generator)
     match /counters/{counterId} {
       allow read, write: if true;
