@@ -44,6 +44,7 @@ export function OrderSummarySheet({ onSubmit, loading }: OrderSummarySheetProps)
         </div>
 
         <Button
+          type="button"
           onClick={onSubmit}
           loading={loading}
           disabled={itemCount === 0}

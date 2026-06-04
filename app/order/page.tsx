@@ -7,7 +7,8 @@ import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Truck, MapPin, Smartphone, Building2, QrCode, ShieldCheck } from 'lucide-react';
+import { Truck, MapPin, Smartphone, Building2, QrCode, ShieldCheck, ClipboardList, Upload } from 'lucide-react';
+import { ImageUpload } from '@/components/admin/ImageUpload';
 import appleIcon from '../apple-icon.png';
 import { Input, Textarea } from '@/components/ui/Input';
 import { RadioCard } from '@/components/ui/RadioCard';
@@ -60,6 +61,7 @@ export default function OrderPage() {
   const { grouped, loading: productsLoading } = useProducts();
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [paymentProofUrl, setPaymentProofUrl] = useState<string>('');
 
   const {
     register,
@@ -145,6 +147,7 @@ export default function OrderPage() {
         status: 'pending',
         paymentMethod: data.paymentMethod as PaymentMethod,
         paymentStatus: 'unpaid',
+        ...(paymentProofUrl ? { paymentProofUrl } : {}),
         notes: data.notes || '',
       });
 
@@ -177,14 +180,24 @@ export default function OrderPage() {
               <Image src={appleIcon} alt="Logo Pempek Domino" width={24} height={24} className="rounded-md" />
               <h1 className="font-display font-bold text-xl">Pempek Domino</h1>
             </div>
-            <Link
-              href="/admin/login"
-              className="flex items-center gap-1.5 text-white/40 hover:text-white/80 transition-colors text-xs py-1 px-2 rounded-lg hover:bg-white/10"
-              aria-label="Masuk sebagai admin"
-            >
-              <ShieldCheck size={14} />
-              <span>Admin</span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/my-orders"
+                className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors text-xs py-1 px-2 rounded-lg hover:bg-white/10"
+                aria-label="Pesanan Saya"
+              >
+                <ClipboardList size={14} />
+                <span>Pesanan Saya</span>
+              </Link>
+              <Link
+                href="/admin/login"
+                className="flex items-center gap-1.5 text-white/40 hover:text-white/80 transition-colors text-xs py-1 px-2 rounded-lg hover:bg-white/10"
+                aria-label="Masuk sebagai admin"
+              >
+                <ShieldCheck size={14} />
+                <span>Admin</span>
+              </Link>
+            </div>
           </div>
           <p className="text-white/70 text-sm">Pesan Pempek Palembang, Nikmat di Mana Saja</p>
         </div>
@@ -324,6 +337,22 @@ export default function OrderPage() {
               ))}
             </div>
             <PaymentPreview method={paymentMethodVal} config={paymentConfig} />
+
+            {/* Upload Bukti Pembayaran */}
+            <div className="mt-4 bg-white rounded-card shadow-card p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Upload size={16} className="text-primary" />
+                <p className="font-semibold text-brown text-sm">Upload Bukti Pembayaran</p>
+                <span className="text-xs text-brown/40">(opsional)</span>
+              </div>
+              <ImageUpload
+                label=""
+                currentUrl={paymentProofUrl}
+                storagePath="payment-proofs"
+                onUploaded={(url) => setPaymentProofUrl(url)}
+              />
+              <p className="text-xs text-brown/50 mt-2">Upload sekarang atau kirim via WhatsApp setelah pesan dibuat.</p>
+            </div>
           </section>
 
           {/* Section 4: Pilih Menu */}

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ToastProvider } from '@/components/ui/Toast';
+import { PWAUpdateBanner } from '@/components/PWAUpdateBanner';
 
 export const metadata: Metadata = {
   title: {
@@ -44,6 +45,7 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <ToastProvider>
+          <PWAUpdateBanner />
           {children}
         </ToastProvider>
       </body>

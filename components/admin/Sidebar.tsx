@@ -8,6 +8,7 @@ import {
   BarChart3,
   Users,
   UtensilsCrossed,
+  CreditCard,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { href: '/admin/recap', label: 'Rekap', icon: BarChart3 },
   { href: '/admin/customers', label: 'Pelanggan', icon: Users },
   { href: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
+  { href: '/admin/payments', label: 'Pembayaran', icon: CreditCard },
   { href: '/admin/settings', label: 'Pengaturan', icon: Settings },
 ];
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CheckCircle2, MessageCircle, RefreshCcw, Truck, MapPin, Clock } from 'lucide-react';
+import { CheckCircle2, MessageCircle, RefreshCcw, Truck, MapPin, Clock, ClipboardList } from 'lucide-react';
 import { getOrder } from '@/lib/firestore';
 import { getBusinessSettings } from '@/lib/firestore';
 import { formatRupiah, formatDateId, formatWhatsApp, generateWhatsAppLink, PAYMENT_METHOD_LABELS, DELIVERY_METHOD_LABELS } from '@/lib/utils';
@@ -171,6 +171,21 @@ export default function ConfirmationPage() {
           </CardBody>
         </Card>
 
+        {/* Payment proof */}
+        {order.paymentProofUrl && (
+          <Card>
+            <CardBody>
+              <h2 className="font-display font-semibold text-brown mb-3">Bukti Pembayaran</h2>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={order.paymentProofUrl}
+                alt="Bukti pembayaran"
+                className="w-full max-h-64 object-contain rounded-input border border-brown/10"
+              />
+            </CardBody>
+          </Card>
+        )}
+
         {/* Payment reminder */}
         {order.paymentStatus === 'unpaid' && (
           <div className="bg-warning/10 border border-warning/30 rounded-input p-3">
@@ -191,6 +206,15 @@ export default function ConfirmationPage() {
           </a>
           <Button
             variant="outline"
+            size="lg"
+            className="w-full"
+            onClick={() => router.push('/my-orders')}
+          >
+            <ClipboardList size={18} />
+            Cek Status Pesanan
+          </Button>
+          <Button
+            variant="ghost"
             size="lg"
             className="w-full"
             onClick={() => router.push('/order')}

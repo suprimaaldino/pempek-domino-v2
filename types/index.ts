@@ -46,6 +46,7 @@ export interface Order {
   status: OrderStatus;
   paymentMethod?: PaymentMethod;
   paymentStatus: PaymentStatus;
+  paymentProofUrl?: string | null;
   notes?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -65,13 +66,19 @@ export interface Customer {
 
 // ─── Payment Config ───────────────────────────────────────────────────────────
 
+export type PaymentMethodType = 'qris' | 'ewallet' | 'bank' | 'dana' | 'transfer';
+
 export interface PaymentMethodItem {
   id: string;
-  methodType: 'qris' | 'dana' | 'transfer';
+  /** 'qris' | 'ewallet' | 'bank' — 'dana' and 'transfer' kept for backward compat */
+  methodType: PaymentMethodType;
   name: string;
+  /** For ewallet: provider name (Dana / Gopay / Shopeepay). For bank: bank name (BCA / BNI / …). For qris: 'QRIS' */
   provider: string;
+  /** E-wallet or bank account number. For QRIS: base64 image data */
   accountNumber: string;
   accountName?: string;
+  qrisImageUrl?: string;
   isActive: boolean;
 }
 

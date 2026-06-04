@@ -38,6 +38,9 @@ const withPWA = require('@ducanh2912/next-pwa').default({
 
 const nextConfig = {
   reactStrictMode: true,
+  // Force unique build ID on every deploy so Vercel never reuses stale JS chunks,
+  // and the PWA Service Worker always detects the new version.
+  generateBuildId: async () => `build-${Date.now()}`,
   images: {
     remotePatterns: [
       {
