@@ -150,9 +150,28 @@ export default function ConfirmationPage() {
               <span>{DELIVERY_METHOD_LABELS[order.deliveryMethod]}</span>
             </div>
             {order.deliveryMethod === 'pickup' && order.pickupDateTime && (
-              <div className="flex items-center gap-2 text-sm text-brown/70">
-                <Clock size={14} />
-                <span>{order.pickupDateTime}</span>
+              <div className="space-y-2 text-sm text-brown/70">
+                <div className="flex items-center gap-2">
+                  <Clock size={14} className="text-primary shrink-0" />
+                  <span>Waktu Ambil: {order.pickupDateTime}</span>
+                </div>
+                {settings?.address && (
+                  <div className="mt-3 pt-3 border-t border-neutral-100 space-y-1.5">
+                    <p className="font-semibold text-neutral-800">Alamat Toko:</p>
+                    <p className="text-xs">{settings.address}</p>
+                    {settings.googleMapsUrl && (
+                      <a
+                        href={settings.googleMapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-primary hover:underline font-semibold text-xs mt-1"
+                      >
+                        <MapPin size={12} />
+                        Lihat di Google Maps
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             {order.deliveryMethod === 'delivery' && order.deliveryAddress && (

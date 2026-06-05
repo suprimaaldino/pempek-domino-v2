@@ -365,8 +365,11 @@ export async function seedProductsIfEmpty(): Promise<void> {
   // Seed default business settings
   await setDoc(doc(db, 'settings', 'business'), {
     storeName: 'Pempek Domino',
-    address: '',
+    address: 'Perumahan Pesanggrahan Kasuari A5, Ponegaran, Jambidan, Banguntapan, Bantul, DI Yogyakarta',
     whatsappNumber: '6281776400024',
-    openingHours: 'Setiap hari 08.00 - 20.00 WIB',
+    operationalDays: 'Setiap Hari',
+    openingTime: '08:00',
+    closingTime: '20:00',
+    googleMapsUrl: 'https://maps.app.goo.gl/AxHH5q4qa9GMi13x6',
   } satisfies BusinessSettings);
 }

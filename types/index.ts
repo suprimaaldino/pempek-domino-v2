@@ -99,7 +99,12 @@ export interface BusinessSettings {
   storeName: string;
   address: string;
   whatsappNumber: string;
-  openingHours: string;
+  /** @deprecated Gunakan operationalDays, openingTime, closingTime */
+  openingHours?: string;
+  operationalDays: string;
+  openingTime: string;
+  closingTime: string;
+  googleMapsUrl?: string;
 }
 
 // ─── Cart (client-side only) ──────────────────────────────────────────────────

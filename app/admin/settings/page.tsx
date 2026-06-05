@@ -11,27 +11,52 @@ import {
 } from '@/lib/firestore';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
+import { Input, Textarea } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import type { BusinessSettings } from '@/types';
+
+const DEFAULT_SETTINGS: BusinessSettings = {
+  storeName: 'Pempek Domino',
+  whatsappNumber: '',
+  address: '',
+  operationalDays: '',
+  openingTime: '08:00',
+  closingTime: '20:00',
+  googleMapsUrl: '',
+};
+
+function normalizeBusinessSettings(raw: BusinessSettings): BusinessSettings {
+  const settings = { ...DEFAULT_SETTINGS, ...raw };
+
+  if (!settings.operationalDays && !settings.openingTime && !settings.closingTime && settings.openingHours) {
+    const timeMatch = settings.openingHours.match(/(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2}[:.]\d{2})/);
+    if (timeMatch) {
+      settings.openingTime = timeMatch[1].replace('.', ':').padStart(5, '0');
+      settings.closingTime = timeMatch[2].replace('.', ':').padStart(5, '0');
+    }
+    const withoutTimes = settings.openingHours
+      .replace(/(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2}[:.]\d{2})/, '')
+      .replace(/^[\s,]+|[\s,]+$/g, '');
+    if (withoutTimes) {
+      settings.operationalDays = withoutTimes;
+    }
+  }
+
+  return settings;
+}
 
 export default function SettingsPage() {
   const { success: toastSuccess, error: toastError } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
-    storeName: 'Pempek Domino',
-    whatsappNumber: '',
-    address: '',
-    openingHours: '',
-  });
+  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
     async function fetchData() {
       try {
         const biz = await getBusinessSettings();
-        if (biz) setBusinessSettings(biz);
+        if (biz) setBusinessSettings(normalizeBusinessSettings(biz));
       } catch (err) {
         console.error(err);
       } finally {
@@ -45,10 +70,11 @@ export default function SettingsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await updateBusinessSettings(businessSettings);
+      const { openingHours: _legacy, ...toSave } = businessSettings;
+      await updateBusinessSettings(toSave);
       toastSuccess('Pengaturan bisnis berhasil disimpan');
     } catch (err) {
-      toastError('Gagal menyimpan pengaturan basis');
+      toastError('Gagal menyimpan pengaturan bisnis');
     } finally {
       setSaving(false);
     }
@@ -95,15 +121,40 @@ export default function SettingsPage() {
               required
             />
             <Input 
-              label="Jam Operasional" 
-              placeholder="Contoh: Setiap Hari, 08.00 - 20.00" 
-              value={businessSettings.openingHours}
-              onChange={(e) => setBusinessSettings({...businessSettings, openingHours: e.target.value})}
+              label="Hari Operasional" 
+              placeholder="Contoh: Senin - Minggu" 
+              value={businessSettings.operationalDays}
+              onChange={(e) => setBusinessSettings({...businessSettings, operationalDays: e.target.value})}
+              helperText="Tuliskan hari buka toko, misalnya Setiap Hari atau Senin - Sabtu"
             />
-            <Input 
-              label="Alamat Toko (untuk Ambil Sendiri)" 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input 
+                type="time"
+                label="Jam Buka" 
+                value={businessSettings.openingTime}
+                onChange={(e) => setBusinessSettings({...businessSettings, openingTime: e.target.value})}
+              />
+              <Input 
+                type="time"
+                label="Jam Tutup" 
+                value={businessSettings.closingTime}
+                onChange={(e) => setBusinessSettings({...businessSettings, closingTime: e.target.value})}
+              />
+            </div>
+            <Textarea 
+              label="Alamat Toko" 
+              placeholder="Alamat lengkap toko"
               value={businessSettings.address}
               onChange={(e) => setBusinessSettings({...businessSettings, address: e.target.value})}
+              rows={3}
+            />
+            <Input 
+              type="url"
+              label="Link Alamat Toko (Google Maps)" 
+              placeholder="https://maps.app.goo.gl/..." 
+              value={businessSettings.googleMapsUrl || ''}
+              onChange={(e) => setBusinessSettings({...businessSettings, googleMapsUrl: e.target.value})}
+              helperText="Contoh: https://maps.app.goo.gl/AxHH5q4qa9GMi13x6"
             />
             <div className="pt-4 flex justify-end">
               <Button type="submit" loading={saving}>

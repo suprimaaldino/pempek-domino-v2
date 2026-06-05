@@ -16,13 +16,14 @@ import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/order/ProductCard';
 import { OrderSummarySheet } from '@/components/order/OrderSummarySheet';
 import { PaymentPreview } from '@/components/order/PaymentPreview';
+import { StoreLocationPreview } from '@/components/order/StoreLocationPreview';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useOrderStore } from '@/store/orderStore';
 import { useProducts } from '@/hooks/useProducts';
-import { createOrder, generateOrderNumber, upsertCustomer, getPaymentConfig, seedProductsIfEmpty } from '@/lib/firestore';
+import { createOrder, generateOrderNumber, upsertCustomer, getPaymentConfig, seedProductsIfEmpty, getBusinessSettings } from '@/lib/firestore';
 import { normalizePhone, CATEGORY_LABELS } from '@/lib/utils';
-import type { PaymentConfig, PaymentMethod, DeliveryMethod } from '@/types';
+import type { PaymentConfig, PaymentMethod, DeliveryMethod, BusinessSettings } from '@/types';
 
 const schema = z.object({
   customerName: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -60,6 +61,7 @@ export default function OrderPage() {
   const { items, subtotal, setCustomerInfo, setDelivery, setPaymentMethod, clearCart } = useOrderStore();
   const { grouped, loading: productsLoading } = useProducts();
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
+  const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [paymentProofUrl, setPaymentProofUrl] = useState<string>('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
@@ -101,6 +103,9 @@ export default function OrderPage() {
           setValue('paymentMethod', firstActive.id);
         }
       }
+    }).catch(() => {});
+    getBusinessSettings().then((biz) => {
+      setBusinessSettings(biz);
     }).catch(() => {});
     seedProductsIfEmpty().catch(() => {});
   }, [setValue]);
@@ -254,6 +259,8 @@ export default function OrderPage() {
                 );
               })
             )}
+
+            <StoreLocationPreview settings={businessSettings} />
           </section>
 
           {/* Section 2: Data Pemesan */}

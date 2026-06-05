@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ClipboardList,
@@ -14,16 +14,16 @@ import {
   PackageSearch,
   ShieldAlert,
 } from 'lucide-react';
-import { getOrderByOrderNumber } from '@/lib/firestore';
+import { getOrderByOrderNumber, getBusinessSettings } from '@/lib/firestore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
 import { formatRupiah, formatDateId, DELIVERY_METHOD_LABELS, cn } from '@/lib/utils';
-import type { Order } from '@/types';
+import type { Order, BusinessSettings } from '@/types';
 
 // ─── Order Detail Card ─────────────────────────────────────────────────────────
 
-function OrderDetailCard({ order }: { order: Order }) {
+function OrderDetailCard({ order, settings }: { order: Order; settings?: BusinessSettings | null }) {
   const [expanded, setExpanded] = useState(true);
 
   return (
@@ -74,21 +74,40 @@ function OrderDetailCard({ order }: { order: Order }) {
           </div>
 
           {/* Delivery */}
-          <div className="flex items-center gap-2 text-sm text-neutral-500">
-            {order.deliveryMethod === 'delivery' ? (
-              <Truck size={14} className="text-primary shrink-0" />
-            ) : (
-              <MapPin size={14} className="text-primary shrink-0" />
-            )}
-            <span>{DELIVERY_METHOD_LABELS[order.deliveryMethod]}</span>
-            {order.deliveryMethod === 'pickup' && order.pickupDateTime && (
-              <span className="flex items-center gap-1">
-                <Clock size={12} />
-                {order.pickupDateTime}
-              </span>
-            )}
-            {order.deliveryMethod === 'delivery' && order.deliveryAddress && (
-              <span className="truncate">{order.deliveryAddress}</span>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-neutral-500">
+              {order.deliveryMethod === 'delivery' ? (
+                <Truck size={14} className="text-primary shrink-0" />
+              ) : (
+                <MapPin size={14} className="text-primary shrink-0" />
+              )}
+              <span>{DELIVERY_METHOD_LABELS[order.deliveryMethod]}</span>
+              {order.deliveryMethod === 'pickup' && order.pickupDateTime && (
+                <span className="flex items-center gap-1">
+                  <Clock size={12} />
+                  {order.pickupDateTime}
+                </span>
+              )}
+              {order.deliveryMethod === 'delivery' && order.deliveryAddress && (
+                <span className="truncate">{order.deliveryAddress}</span>
+              )}
+            </div>
+            {order.deliveryMethod === 'pickup' && settings?.address && (
+              <div className="rounded bg-neutral-50 p-2.5 border border-neutral-100 text-xs text-neutral-600 space-y-1">
+                <p className="font-semibold text-neutral-800">Alamat Toko:</p>
+                <p>{settings.address}</p>
+                {settings.googleMapsUrl && (
+                  <a
+                    href={settings.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline font-semibold mt-0.5"
+                  >
+                    <MapPin size={10} />
+                    Lihat di Google Maps
+                  </a>
+                )}
+              </div>
             )}
           </div>
 
@@ -165,6 +184,11 @@ export default function MyOrdersPage() {
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState<Order | null | undefined>(undefined);
   const [error, setError] = useState('');
+  const [settings, setSettings] = useState<BusinessSettings | null>(null);
+
+  useEffect(() => {
+    getBusinessSettings().then(setSettings).catch(console.error);
+  }, []);
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -264,7 +288,7 @@ export default function MyOrdersPage() {
         )}
 
         {/* Result: found */}
-        {order && <OrderDetailCard order={order} />}
+        {order && <OrderDetailCard order={order} settings={settings} />}
 
         {/* CTA sebelum search */}
         {order === undefined && !loading && (

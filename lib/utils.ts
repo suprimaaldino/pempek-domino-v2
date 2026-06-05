@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
+import type { BusinessSettings } from '@/types';
 
 // ─── Tailwind class helper ─────────────────────────────────────────────────────
 
@@ -49,6 +50,23 @@ export function normalizePhone(input: string): string {
     cleaned = '62' + cleaned;
   }
   return cleaned;
+}
+
+// ─── Store hours ─────────────────────────────────────────────────────────────
+
+export function formatStoreHours(
+  settings: Pick<BusinessSettings, 'operationalDays' | 'openingTime' | 'closingTime' | 'openingHours'>
+): string | null {
+  const hasTime = Boolean(settings.openingTime && settings.closingTime);
+  const timeRange = hasTime ? `${settings.openingTime} - ${settings.closingTime}` : null;
+
+  if (settings.operationalDays && timeRange) {
+    return `${settings.operationalDays}, ${timeRange}`;
+  }
+  if (timeRange) return timeRange;
+  if (settings.operationalDays) return settings.operationalDays;
+  if (settings.openingHours) return settings.openingHours;
+  return null;
 }
 
 // ─── WhatsApp Links ────────────────────────────────────────────────────────────
