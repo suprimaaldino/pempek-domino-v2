@@ -259,8 +259,6 @@ export default function OrderPage() {
                 );
               })
             )}
-
-            <StoreLocationPreview settings={businessSettings} />
           </section>
 
           {/* Section 2: Data Pemesan */}
@@ -341,42 +339,7 @@ export default function OrderPage() {
                 </div>
 
                 {/* Lokasi Toko — hanya tampil saat Ambil Sendiri */}
-                {businessSettings?.address && (
-                  <div className="rounded-card border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-sm font-bold text-neutral-800">
-                      <MapPin size={14} className="text-primary shrink-0" />
-                      <span>Lokasi Toko</span>
-                    </div>
-                    <div className="bg-white rounded-lg border border-neutral-100 divide-y divide-neutral-50 text-xs">
-                      <div className="flex justify-between gap-3 px-3 py-2.5">
-                        <span className="text-neutral-400 shrink-0">Alamat</span>
-                        <span className="font-semibold text-neutral-800 text-right leading-relaxed">{businessSettings.address}</span>
-                      </div>
-                      {businessSettings.openingHours && (
-                        <div className="flex justify-between gap-3 px-3 py-2.5">
-                          <span className="text-neutral-400 shrink-0">Jam Operasional</span>
-                          <span className="font-semibold text-neutral-800 text-right">{businessSettings.openingHours}</span>
-                        </div>
-                      )}
-                      {businessSettings.googleMapsUrl && (
-                        <div className="flex justify-between gap-3 px-3 py-2.5">
-                          <span className="text-neutral-400 shrink-0">Google Maps</span>
-                          <a
-                            href={businessSettings.googleMapsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-primary hover:underline font-semibold"
-                          >
-                            Buka di Maps ↗
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-neutral-400 flex items-center gap-1">
-                      🕐 Gunakan alamat di atas untuk pengambilan pesan (Ambil Sendiri)
-                    </p>
-                  </div>
-                )}
+                <StoreLocationPreview settings={businessSettings} />
               </div>
             ) : (
               <div className="mt-2 bg-white rounded-card shadow-card border border-neutral-100 p-4">
