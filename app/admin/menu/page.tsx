@@ -25,7 +25,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { Product, ProductCategory } from '@/types';
 
-const CATEGORIES: ProductCategory[] = ['kecil', 'besar', 'paket'];
+const CATEGORIES: ProductCategory[] = ['kecil', 'paket', 'sup_kuah', 'minuman', 'lainnya'];
 
 export default function MenuManagementPage() {
   const { success: toastSuccess, error: toastError } = useToast();

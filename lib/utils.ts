@@ -2,7 +2,8 @@ import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
-import type { BusinessSettings } from '@/types';
+import type { BusinessSettings, ProductCategory } from '@/types';
+import { PRODUCT_CATEGORIES, resolveProductCategory } from '@/types';
 
 // ─── Tailwind class helper ─────────────────────────────────────────────────────
 
@@ -133,11 +134,19 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   transfer: 'Transfer Bank',
 };
 
-export const CATEGORY_LABELS: Record<string, string> = {
-  kecil: 'Pempek Kecil',
-  besar: 'Pempek Besar',
-  paket: 'Paket Hemat',
+export const CATEGORY_LABELS: Record<ProductCategory, string> = {
+  kecil: 'Pempek Satuan',
+  paket: 'Pempek Paket',
+  sup_kuah: 'Sup dan Kuah',
+  minuman: 'Minuman',
+  lainnya: 'Lain-Lain',
 };
+
+export { PRODUCT_CATEGORIES, resolveProductCategory };
+
+export function getCategoryLabel(category: string): string {
+  return CATEGORY_LABELS[resolveProductCategory(category)];
+}
 
 // ─── CSV Export ───────────────────────────────────────────────────────────────
 

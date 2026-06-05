@@ -22,11 +22,11 @@ export async function loginAdmin(
   password: string
 ): Promise<void> {
   const expectedUsername = process.env.NEXT_PUBLIC_ADMIN_USERNAME || 'yangpunyapempekdomino';
-  const passwordHash = process.env.NEXT_PUBLIC_ADMIN_PASSWORD_HASH || '';
+  const passwordHash = (process.env.NEXT_PUBLIC_ADMIN_PASSWORD_HASH || '').trim();
 
   // Debug: log environment variable status (don't log the actual hash)
   console.log('[AUTH] Username check:', { expected: expectedUsername, received: username, match: username === expectedUsername });
-  console.log('[AUTH] Password hash exists:', !!passwordHash, 'length:', passwordHash.length);
+  console.log('[AUTH] Password hash exists:', !!passwordHash, 'length:', passwordHash.length, 'ends_with_newline:', passwordHash.includes('\n') || passwordHash.includes('\r'));
 
   if (username !== expectedUsername) {
     console.error('[AUTH] Username mismatch', { expected: expectedUsername, received: username });

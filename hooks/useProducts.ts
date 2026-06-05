@@ -3,12 +3,9 @@
 import { useEffect, useState } from 'react';
 import { subscribeToProducts } from '@/lib/firestore';
 import type { Product, ProductCategory } from '@/types';
+import { PRODUCT_CATEGORIES, resolveProductCategory } from '@/types';
 
-interface GroupedProducts {
-  kecil: Product[];
-  besar: Product[];
-  paket: Product[];
-}
+type GroupedProducts = Record<ProductCategory, Product[]>;
 
 interface UseProductsReturn {
   products: Product[];
@@ -40,8 +37,10 @@ export function useProducts(activeOnly = true): UseProductsReturn {
 
   const grouped: GroupedProducts = {
     kecil: sortedProducts.filter((p) => p.category === 'kecil'),
-    besar: sortedProducts.filter((p) => p.category === 'besar'),
     paket: sortedProducts.filter((p) => p.category === 'paket'),
+    sup_kuah: sortedProducts.filter((p) => p.category === 'sup_kuah'),
+    minuman: sortedProducts.filter((p) => p.category === 'minuman'),
+    lainnya: sortedProducts.filter((p) => p.category === 'lainnya'),
   };
 
   return { products: sortedProducts, grouped, loading, error };

@@ -66,8 +66,10 @@ export default function OrderPage() {
   const [paymentProofUrl, setPaymentProofUrl] = useState<string>('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     kecil: true,
-    besar: false,
     paket: false,
+    sup_kuah: false,
+    minuman: false,
+    lainnya: false,
   });
 
   const {
@@ -178,7 +180,7 @@ export default function OrderPage() {
     }
   };
 
-  const categoryKeys = ['kecil', 'besar', 'paket'] as const;
+  const categoryKeys = ['kecil', 'paket', 'sup_kuah', 'minuman', 'lainnya'] as const;
   const toggleCategory = (category: string) => {
     setExpandedCategories((current) => ({
       ...current,

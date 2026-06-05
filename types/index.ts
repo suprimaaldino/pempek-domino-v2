@@ -2,7 +2,27 @@ import { Timestamp } from 'firebase/firestore';
 
 // ─── Product ─────────────────────────────────────────────────────────────────
 
-export type ProductCategory = 'kecil' | 'besar' | 'paket';
+export const PRODUCT_CATEGORIES = [
+  'kecil',
+  'paket',
+  'sup_kuah',
+  'minuman',
+  'lainnya',
+] as const;
+
+export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
+
+const LEGACY_CATEGORY_ALIASES: Record<string, ProductCategory> = {
+  besar: 'kecil',
+};
+
+/** Map kategori lama (mis. `besar`) ke kategori baru untuk tampilan & pengelompokan. */
+export function resolveProductCategory(category: string): ProductCategory {
+  if ((PRODUCT_CATEGORIES as readonly string[]).includes(category)) {
+    return category as ProductCategory;
+  }
+  return LEGACY_CATEGORY_ALIASES[category] ?? 'lainnya';
+}
 
 export interface Product {
   id: string;
