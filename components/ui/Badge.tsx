@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import type { OrderStatus, PaymentStatus } from '@/types';
 
@@ -16,7 +17,7 @@ const variantClasses = {
   neutral: 'bg-brown/10 text-brown/70 border border-brown/20',
 };
 
-export function Badge({ label, variant = 'neutral', size = 'sm', className }: BadgeProps) {
+export const Badge = memo(function Badge({ label, variant = 'neutral', size = 'sm', className }: BadgeProps) {
   return (
     <span
       className={cn(
@@ -29,9 +30,9 @@ export function Badge({ label, variant = 'neutral', size = 'sm', className }: Ba
       {label}
     </span>
   );
-}
+});
 
-export function OrderStatusBadge({ status }: { status: OrderStatus }) {
+export const OrderStatusBadge = memo(function OrderStatusBadge({ status }: { status: OrderStatus }) {
   const map: Record<OrderStatus, { label: string; variant: BadgeProps['variant'] }> = {
     pending: { label: 'Menunggu', variant: 'warning' },
     ready: { label: 'Siap', variant: 'info' },
@@ -40,13 +41,13 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   };
   const { label, variant } = map[status];
   return <Badge label={label} variant={variant} />;
-}
+});
 
-export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+export const PaymentStatusBadge = memo(function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   return (
     <Badge
       label={status === 'paid' ? 'Sudah Bayar' : 'Belum Bayar'}
       variant={status === 'paid' ? 'success' : 'error'}
     />
   );
-}
+});

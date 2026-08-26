@@ -1,0 +1,16 @@
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for client (static)...
+ ○ (pwa) Service worker won't be automatically registered as per the config, please call the following code in componentDidMount or useEffect:
+ ○ (pwa)   window.workbox.register()
+ ○ (pwa) You may also want to add @ducanh2912/next-pwa/workbox to compilerOptions.types in your tsconfig.json/jsconfig.json.
+ ○ (pwa) Service worker: D:\pempek-domino-v2\public\sw.js
+ ○ (pwa)   URL: /sw.js
+ ○ (pwa)   Scope: /
+ ○ (pwa) Building in development mode, caching and precaching are disabled for the most part. This means that offline support is disabled, but you can continue developing other functions in service worker.
+ ✓ Ready in 29.3s

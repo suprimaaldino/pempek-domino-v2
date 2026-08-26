@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
 
 interface CardProps {
@@ -8,7 +8,7 @@ interface CardProps {
   hoverable?: boolean;
 }
 
-export function Card({ children, className, onClick, hoverable }: CardProps) {
+export const Card = memo(function Card({ children, className, onClick, hoverable }: CardProps) {
   return (
     <div
       onClick={onClick}
@@ -22,7 +22,8 @@ export function Card({ children, className, onClick, hoverable }: CardProps) {
       {children}
     </div>
   );
-}
+});
+
 
 interface CardHeaderProps {
   title: string;
@@ -32,7 +33,7 @@ interface CardHeaderProps {
   className?: string;
 }
 
-export function CardHeader({ title, subtitle, icon, action, className }: CardHeaderProps) {
+export const CardHeader = memo(function CardHeader({ title, subtitle, icon, action, className }: CardHeaderProps) {
   return (
     <div className={cn('flex items-start justify-between p-4 pb-0', className)}>
       <div className="flex items-center gap-2">
@@ -45,8 +46,8 @@ export function CardHeader({ title, subtitle, icon, action, className }: CardHea
       {action && <div className="ml-2">{action}</div>}
     </div>
   );
-}
+});
 
-export function CardBody({ children, className }: { children: React.ReactNode; className?: string }) {
+export const CardBody = memo(function CardBody({ children, className }: { children: React.ReactNode; className?: string }) {
   return <div className={cn('p-4', className)}>{children}</div>;
-}
+});

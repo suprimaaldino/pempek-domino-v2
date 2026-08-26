@@ -1,18 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Truck, MapPin, Smartphone, Building2, QrCode, ShieldCheck, ClipboardList, Upload, ChevronDown } from 'lucide-react';
+import { Truck, MapPin, Smartphone, Building2, QrCode, ClipboardList, Upload, ChevronDown } from 'lucide-react';
 import { ImageUpload } from '@/components/admin/ImageUpload';
-import appleIcon from '../apple-icon.png';
 import { Input, Textarea } from '@/components/ui/Input';
 import { RadioCard } from '@/components/ui/RadioCard';
-import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/order/ProductCard';
 import { OrderSummarySheet } from '@/components/order/OrderSummarySheet';
 import { PaymentPreview } from '@/components/order/PaymentPreview';
@@ -23,7 +21,8 @@ import { useOrderStore } from '@/store/orderStore';
 import { useProducts } from '@/hooks/useProducts';
 import { createOrder, generateOrderNumber, upsertCustomer, getPaymentConfig, seedProductsIfEmpty, getBusinessSettings } from '@/lib/firestore';
 import { normalizePhone, CATEGORY_LABELS } from '@/lib/utils';
-import type { PaymentConfig, PaymentMethod, DeliveryMethod, BusinessSettings } from '@/types';
+import { sanitizeName, validateOrderData } from '@/lib/sanitize';
+import type { PaymentConfig, PaymentMethod, DeliveryMethod, BusinessSettings, ProductCategory } from '@/types';
 
 const schema = z.object({
   customerName: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -34,7 +33,7 @@ const schema = z.object({
   deliveryMethod: z.enum(['pickup', 'delivery']),
   pickupDateTime: z.string(),
   deliveryAddress: z.string(),
-  deliveryFee: z.any().transform((v) => Number(v) || 0),
+  deliveryFee: z.coerce.number().min(0),
   paymentMethod: z.string().min(1, 'Pilih metode pembayaran'),
 }).refine(
   (d) => d.deliveryMethod !== 'pickup' || d.pickupDateTime.length > 0,
@@ -60,6 +59,15 @@ export default function OrderPage() {
   const { success: toastSuccess, error: toastError } = useToast();
   const { items, subtotal, setCustomerInfo, setDelivery, setPaymentMethod, clearCart } = useOrderStore();
   const { grouped, loading: productsLoading } = useProducts();
+  const productCategoryMap = useMemo(() => {
+    const map = new Map<string, ProductCategory>();
+    for (const prods of Object.values(grouped)) {
+      for (const p of prods) {
+        map.set(p.id, p.category);
+      }
+    }
+    return map;
+  }, [grouped]);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -137,34 +145,53 @@ export default function OrderPage() {
       const sub = subtotal;
       const total = sub + fee;
 
+      // Validate and sanitize all inputs
+      const validation = validateOrderData({
+        customerName: data.customerName,
+        whatsappNumber: phone,
+        deliveryAddress: data.deliveryAddress || undefined,
+        notes: data.notes,
+        deliveryFee: fee,
+        total,
+      });
+
+      if (!validation.isValid) {
+        toastError(validation.errors.join('. '));
+        setSubmitting(false);
+        return;
+      }
+
+      const { sanitizedData } = validation;
+
       const orderItems = items.map((i) => ({
         productId: i.productId,
-        productName: i.productName,
+        productName: sanitizeName(i.productName),
         price: i.price,
         quantity: i.quantity,
         subtotal: i.price * i.quantity,
+        category: productCategoryMap.get(i.productId),
       }));
 
       const orderId = await createOrder({
         orderNumber,
-        customerName: data.customerName,
-        whatsappNumber: phone,
+        customerName: sanitizedData.customerName,
+        whatsappNumber: sanitizedData.whatsappNumber,
         deliveryMethod: data.deliveryMethod,
         pickupDateTime: data.deliveryMethod === 'pickup' ? data.pickupDateTime : null,
-        deliveryAddress: data.deliveryMethod === 'delivery' ? data.deliveryAddress : null,
-        deliveryFee: fee,
+        deliveryAddress: data.deliveryMethod === 'delivery' ? sanitizedData.deliveryAddress : null,
+        deliveryFee: sanitizedData.deliveryFee,
         items: orderItems,
         subtotal: sub,
-        total,
+        total: sanitizedData.total,
         status: 'pending',
         paymentMethod: data.paymentMethod as PaymentMethod,
         paymentStatus: 'unpaid',
         ...(paymentProofUrl ? { paymentProofUrl } : {}),
-        notes: data.notes || '',
+        notes: sanitizedData.notes,
       });
 
       try {
-        await upsertCustomer(data.customerName, phone, total);
+        await upsertCustomer(sanitizedData.customerName, sanitizedData.whatsappNumber, sanitizedData.total);
       } catch (custErr) {
         console.error('Failed to upsert customer details:', custErr);
       }
@@ -202,13 +229,15 @@ export default function OrderPage() {
               <p className="text-xs text-neutral-400">Pesan Pempek Palembang</p>
             </div>
           </div>
-          <Link
-            href="/my-orders"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-neutral-600 hover:text-primary hover:bg-primary/5 transition-colors border border-neutral-200"
-          >
-            <ClipboardList size={14} />
-            Cek Pesanan
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/my-orders"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-neutral-600 hover:text-primary hover:bg-primary/5 transition-colors border border-neutral-200"
+            >
+              <ClipboardList size={14} />
+              Cek Pesanan
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -231,7 +260,7 @@ export default function OrderPage() {
                 const isExpanded = expandedCategories[cat];
                 return (
                   <div key={cat} className="mb-5">
-                    <button
+                      <button
                       type="button"
                       onClick={() => toggleCategory(cat)}
                       className="w-full flex items-center justify-between gap-3 rounded-card border border-neutral-100 bg-white px-3 py-3 shadow-card text-left"

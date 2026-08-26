@@ -31,8 +31,3 @@ export function useLocalStorage<T>(key: string, initial: T) {
 
   return [value, set] as const;
 }
-
-export function useToast() {
-  // Implemented within Toast context — re-exported here for convenience
-  // See components/ui/Toast.tsx
-}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   CreditCard,
   Plus,
@@ -97,11 +97,7 @@ export default function PaymentsPage() {
 
   // ─── Load data ──────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    loadConfig();
-  }, []);
-
-  async function loadConfig() {
+  const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
       const cfg = await getPaymentConfig();
@@ -112,7 +108,11 @@ export default function PaymentsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [toastError]);
+
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
 
   // ─── Save helpers ────────────────────────────────────────────────────────────
 

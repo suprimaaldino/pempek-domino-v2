@@ -18,6 +18,8 @@ import { getOrderByOrderNumber, getBusinessSettings } from '@/lib/firestore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
+import { SkeletonCard, SkeletonList } from '@/components/ui/Skeleton';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { formatRupiah, formatDateId, DELIVERY_METHOD_LABELS, cn } from '@/lib/utils';
 import type { Order, BusinessSettings } from '@/types';
 
@@ -247,7 +249,7 @@ export default function MyOrdersPage() {
         <form onSubmit={handleSearch} className="mb-6 bg-white rounded-card shadow-card border border-neutral-100 p-4 space-y-3">
           <Input
             label="Nomor Pesanan"
-            placeholder="Contoh: PD-20260604-001"
+            placeholder="Contoh: PD-20260825-001-X7K9"
             value={orderNumber}
             onChange={(e) => {
               setOrderNumber(e.target.value);
@@ -266,6 +268,13 @@ export default function MyOrdersPage() {
             Cek Pesanan
           </Button>
         </form>
+
+        {loading && (
+          <div className="space-y-3">
+            <SkeletonCard />
+            <SkeletonList count={2} />
+          </div>
+        )}
 
         {/* Result: not found */}
         {order === null && !loading && (
@@ -288,7 +297,11 @@ export default function MyOrdersPage() {
         )}
 
         {/* Result: found */}
-        {order && <OrderDetailCard order={order} settings={settings} />}
+        {order && (
+          <ErrorBoundary>
+            <OrderDetailCard order={order} settings={settings} />
+          </ErrorBoundary>
+        )}
 
         {/* CTA sebelum search */}
         {order === undefined && !loading && (
@@ -296,7 +309,7 @@ export default function MyOrdersPage() {
             <ClipboardList size={36} className="mx-auto mb-3 opacity-20" />
             <p className="text-sm font-medium">Masukkan nomor pesanan untuk melihat statusnya</p>
             <p className="text-xs mt-1 text-neutral-300">
-              Nomor pesanan tersedia di halaman konfirmasi (contoh: PD-20260604-001)
+              Nomor pesanan tersedia di halaman konfirmasi (contoh: PD-20260825-001-X7K9)
             </p>
           </div>
         )}

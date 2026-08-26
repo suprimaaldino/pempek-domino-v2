@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { QrCode, Smartphone, Building2, ZoomIn, Download, X, Copy, Check, AlertCircle } from 'lucide-react';
-import type { PaymentConfig } from '@/types';
+import type { PaymentConfig, PaymentMethodItem } from '@/types';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
@@ -21,9 +21,7 @@ interface ToastProps {
 // Toast Component
 function Toast({ message, type, onClose }: ToastProps) {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 3000);
+    const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
@@ -39,49 +37,120 @@ function Toast({ message, type, onClose }: ToastProps) {
   );
 }
 
+// Helper to get fallback method config
+function getFallbackMethod(method: string, config: PaymentConfig): Partial<PaymentMethodItem> {
+  const fallbacks: Record<string, Partial<PaymentMethodItem>> = {
+    qris: { name: 'QRIS', provider: 'QRIS', accountNumber: config.qrisImageUrl },
+    dana: { name: 'Dana', provider: 'Dana', accountNumber: config.danaNumber },
+    transfer: { name: 'Transfer Bank', provider: config.bankName, accountNumber: config.bankAccountNumber, accountName: config.bankAccountName },
+  };
+  return fallbacks[method] || { name: method, provider: '-' };
+}
+
+// Reusable Payment Info Component
+interface PaymentInfoProps {
+  icon: React.ReactNode;
+  title: string;
+  provider: string;
+  accountNumber: string;
+  accountName?: string;
+  copiedField: string | null;
+  copyId: string;
+  onCopy: (text: string, fieldId: string) => void;
+  note: string;
+}
+
+function PaymentInfo({
+  icon,
+  title,
+  provider,
+  accountNumber,
+  accountName,
+  copiedField,
+  copyId,
+  onCopy,
+  note,
+}: PaymentInfoProps) {
+  return (
+    <Card className="mt-3 border border-secondary/30">
+      <CardBody className="flex flex-col gap-3">
+        <div className="flex items-center gap-2 text-brown font-semibold">
+          {icon}
+          {title}
+        </div>
+        <div className="bg-cream rounded-input p-3 space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-brown/60 text-sm">
+              {title.includes('Bank') ? 'Bank / Penyedia Jasa' : 'E-Wallet'}
+            </span>
+            <span className="font-semibold text-brown">{provider || '-'}</span>
+          </div>
+
+          <div className="flex justify-between items-center gap-3">
+            <span className="text-brown/60 text-sm shrink-0">No. {title.includes('Bank') ? 'Rekening / Account' : 'Account'}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-primary text-base tracking-wider select-all">
+                {accountNumber || '-'}
+              </span>
+              {accountNumber && (
+                <button
+                  type="button"
+                  onClick={() => onCopy(accountNumber, copyId)}
+                  className="p-1.5 hover:bg-primary/10 rounded-md transition-all duration-200 text-primary/60 hover:text-primary group"
+                  aria-label="Copy nomor"
+                >
+                  {copiedField === copyId ? (
+                    <Check size={14} className="text-green-500" />
+                  ) : (
+                    <Copy size={14} className="group-hover:scale-105 transition-transform" />
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {accountName && (
+            <div className="flex justify-between items-center">
+              <span className="text-brown/60 text-sm">Atas Nama</span>
+              <span className="font-semibold text-brown">{accountName}</span>
+            </div>
+          )}
+        </div>
+        <p className="text-xs text-brown/60 text-center">{note}</p>
+      </CardBody>
+    </Card>
+  );
+}
+
 export function PaymentPreview({ method, config }: PaymentPreviewProps) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const handleCopy = async (text: string, fieldId: string) => {
+  const handleCopy = useCallback(async (text: string, fieldId: string) => {
     if (!text || text === '-') {
-      setToast({ message: 'Tidak ada nomor rekening untuk disalin', type: 'error' });
+      setToast({ message: 'Tidak ada nomor untuk disalin', type: 'error' });
       return;
     }
 
     try {
       await navigator.clipboard.writeText(text);
       setCopiedField(fieldId);
-      setToast({ message: 'Nomor rekening/account berhasil disalin ✓', type: 'success' });
+      setToast({ message: 'Nomor berhasil disalin ✓', type: 'success' });
       setTimeout(() => setCopiedField(null), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
       setToast({ message: 'Gagal menyalin, silakan coba lagi', type: 'error' });
     }
-  };
-
-  // Auto-hide toast after 3 seconds
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => {
-        setToast(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
+  }, []);
 
   if (!config) return null;
 
-  // Find the configured method, or fallback to default structure
   const activeMethod = config.methods?.find((m) => m.id === method) || {
     id: method,
-    methodType: method as 'qris' | 'dana' | 'ewallet' | 'transfer' | 'bank',
-    name: method === 'qris' ? 'QRIS' : method === 'dana' ? 'Dana' : 'Transfer Bank',
-    provider: method === 'qris' ? 'QRIS' : method === 'dana' ? 'Dana' : config.bankName,
-    accountNumber: method === 'qris' ? config.qrisImageUrl : method === 'dana' ? config.danaNumber : config.bankAccountNumber,
-    accountName: method === 'transfer' ? config.bankAccountName : undefined,
+    methodType: method as PaymentMethodItem['methodType'],
     isActive: true,
+    ...getFallbackMethod(method, config),
   };
 
   if (!activeMethod.isActive) return null;
@@ -157,6 +226,8 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
           </CardBody>
         </Card>
 
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
         {/* Zoom Lightbox Modal */}
         {isZoomed && qrisUrl && (
           <div
@@ -220,110 +291,42 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
     );
   }
 
+  // Render E-Wallet / Dana
   if (activeMethod.methodType === 'dana' || activeMethod.methodType === 'ewallet') {
     return (
       <>
-        <Card className="mt-3 border border-secondary/30">
-          <CardBody className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 text-brown font-semibold">
-              <Smartphone size={18} className="text-primary" />
-              {activeMethod.name}
-            </div>
-            <div className="bg-cream rounded-input p-3 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-brown/60 text-sm">E-Wallet</span>
-                <span className="font-semibold text-brown">{activeMethod.provider || '-'}</span>
-              </div>
-              
-              <div className="flex justify-between items-center gap-3">
-                <span className="text-brown/60 text-sm">No. Account</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-primary text-base tracking-wider select-all">
-                    {activeMethod.accountNumber || '-'}
-                  </span>
-                  {activeMethod.accountNumber && (
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(activeMethod.accountNumber!, 'ewallet-account')}
-                      className="p-1.5 hover:bg-primary/10 rounded-md transition-all duration-200 text-primary/60 hover:text-primary group"
-                      aria-label="Copy nomor account"
-                    >
-                      {copiedField === 'ewallet-account' ? (
-                        <Check size={14} className="text-green-500" />
-                      ) : (
-                        <Copy size={14} className="group-hover:scale-105 transition-transform" />
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-              
-              {activeMethod.accountName && (
-                <div className="flex justify-between items-center">
-                  <span className="text-brown/60 text-sm">Atas Nama</span>
-                  <span className="font-semibold text-brown">{activeMethod.accountName}</span>
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-brown/60 text-center">
-              Transfer ke {activeMethod.provider} di atas, lalu upload bukti bayar ke WhatsApp
-            </p>
-          </CardBody>
-        </Card>
+        <PaymentInfo
+          icon={<Smartphone size={18} className="text-primary" />}
+          title={activeMethod.name || 'E-Wallet'}
+          provider={activeMethod.provider || '-'}
+          accountNumber={activeMethod.accountNumber || '-'}
+          accountName={activeMethod.accountName}
+          copiedField={copiedField}
+          copyId="ewallet-account"
+          onCopy={handleCopy}
+          note={`Transfer ke ${activeMethod.provider} di atas, lalu upload bukti bayar ke WhatsApp`}
+        />
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </>
     );
   }
 
+  // Render Bank Transfer
   if (activeMethod.methodType === 'transfer' || activeMethod.methodType === 'bank') {
     return (
       <>
-        <Card className="mt-3 border border-secondary/30">
-          <CardBody className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 text-brown font-semibold">
-              <Building2 size={18} className="text-primary" />
-              {activeMethod.name}
-            </div>
-            <div className="bg-cream rounded-input p-3 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-brown/60 text-sm">Bank / Penyedia Jasa</span>
-                <span className="font-semibold text-brown">{activeMethod.provider || '-'}</span>
-              </div>
-              
-              <div className="flex justify-between items-center gap-3">
-                <span className="text-brown/60 text-sm">No. Rekening / Account</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-primary text-base tracking-wider select-all">
-                    {activeMethod.accountNumber || '-'}
-                  </span>
-                  {activeMethod.accountNumber && (
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(activeMethod.accountNumber!, 'bank-account')}
-                      className="p-1.5 hover:bg-primary/10 rounded-md transition-all duration-200 text-primary/60 hover:text-primary group"
-                      aria-label="Copy nomor rekening"
-                    >
-                      {copiedField === 'bank-account' ? (
-                        <Check size={14} className="text-green-500" />
-                      ) : (
-                        <Copy size={14} className="group-hover:scale-105 transition-transform" />
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-              
-              {activeMethod.accountName && (
-                <div className="flex justify-between items-center">
-                  <span className="text-brown/60 text-sm">Atas Nama</span>
-                  <span className="font-semibold text-brown">{activeMethod.accountName}</span>
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-brown/60 text-center flex-wrap">
-              Transfer sesuai total pesanan, lalu upload bukti bayar ke WhatsApp
-            </p>
-          </CardBody>
-        </Card>
+        <PaymentInfo
+          icon={<Building2 size={18} className="text-primary" />}
+          title={activeMethod.name || 'Transfer Bank'}
+          provider={activeMethod.provider || '-'}
+          accountNumber={activeMethod.accountNumber || '-'}
+          accountName={activeMethod.accountName}
+          copiedField={copiedField}
+          copyId="bank-account"
+          onCopy={handleCopy}
+          note="Transfer sesuai total pesanan, lalu upload bukti bayar ke WhatsApp"
+        />
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </>
     );
   }

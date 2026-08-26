@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, User, UtensilsCrossed, Eye, EyeOff } from 'lucide-react';
+import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -44,9 +44,9 @@ export default function AdminLoginPage() {
     try {
       await loginAdmin(data.username, data.password);
       router.push('/admin/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toastError(err.message || 'Login gagal. Periksa kembali username dan password.');
+      toastError(err instanceof Error ? err.message : 'Login gagal. Periksa kembali username dan password.');
     } finally {
       setLoading(false);
     }

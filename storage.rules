@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ─── Product Images ─────────────────────────────────────────────────
+    // Public read (storefront), admin-only write.
+    match /product-images/{fileName} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      // Images are immutable — replace by uploading a new file.
+      allow update, delete: if false;
+    }
+
+    // ─── Payment Proofs ─────────────────────────────────────────────────
+    // Guests are not authenticated, but uploads are constrained:
+    // one-time create of a small image; no overwrite/delete via client.
+    match /payment-proofs/{fileName} {
+      allow read: if true;
+      allow create: if request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow update, delete: if false;
+    }
+
+    // ─── Default deny ───────────────────────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

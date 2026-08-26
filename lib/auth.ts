@@ -1,70 +1,25 @@
 import {
-  signInWithEmailAndPassword,
   signOut,
-  setPersistence,
-  browserLocalPersistence,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   User,
 } from 'firebase/auth';
-import bcrypt from 'bcryptjs';
 import { auth } from '@/lib/firebase';
 
-const ADMIN_EMAIL = 'suprimaaldino@gmail.com';
-
 /**
- * Login admin with username + plaintext password.
- * 1. Validates username against env
- * 2. bcrypt-verifies password against stored hash
- * 3. Signs in with Firebase Auth
+ * Login admin via secure API route.
+ * Password verification happens server-side to prevent hash exposure.
  */
-export async function loginAdmin(
-  username: string,
-  password: string
-): Promise<void> {
-  const expectedUsername = process.env.NEXT_PUBLIC_ADMIN_USERNAME || 'yangpunyapempekdomino';
-  const passwordHash = (process.env.NEXT_PUBLIC_ADMIN_PASSWORD_HASH || '').trim();
+export async function loginAdmin(username: string, password: string): Promise<void> {
+  const response = await fetch('/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
 
-  // Debug: log environment variable status (don't log the actual hash)
-  console.log('[AUTH] Username check:', { expected: expectedUsername, received: username, match: username === expectedUsername });
-  console.log('[AUTH] Password hash exists:', !!passwordHash, 'length:', passwordHash.length, 'ends_with_newline:', passwordHash.includes('\n') || passwordHash.includes('\r'));
+  const data = await response.json();
 
-  if (username !== expectedUsername) {
-    console.error('[AUTH] Username mismatch', { expected: expectedUsername, received: username });
-    throw new Error('Username atau password salah.');
-  }
-
-  if (!passwordHash) {
-    console.error('[AUTH] CRITICAL: Password hash not set in environment variables');
-    throw new Error('Server error: Admin credentials not configured. Contact administrator.');
-  }
-
-  try {
-    const valid = await bcrypt.compare(password, passwordHash);
-    console.log('[AUTH] Bcrypt verification result:', valid);
-    if (!valid) {
-      console.error('[AUTH] Bcrypt validation failed - password incorrect');
-      throw new Error('Username atau password salah.');
-    }
-  } catch (bcryptErr: any) {
-    console.error('[AUTH] Bcrypt error:', bcryptErr.message);
-    throw new Error('Server error: Authentication service unavailable. Please try again.');
-  }
-
-  await setPersistence(auth, browserLocalPersistence);
-  try {
-    console.log('[AUTH] Attempting Firebase sign-in with email:', ADMIN_EMAIL);
-    await signInWithEmailAndPassword(auth, ADMIN_EMAIL, password);
-    console.log('[AUTH] Firebase sign-in successful');
-  } catch (firebaseErr: any) {
-    console.error('[AUTH] Firebase sign in failed:', firebaseErr.code, firebaseErr.message);
-    // Map Firebase errors to user-friendly messages
-    if (firebaseErr.code === 'auth/user-not-found') {
-      throw new Error('Admin account not found in Firebase. Contact administrator.');
-    }
-    if (firebaseErr.code === 'auth/wrong-password') {
-      throw new Error('Username atau password salah.');
-    }
-    throw new Error('Login gagal. Periksa kembali username dan password.');
+  if (!response.ok) {
+    throw new Error(data.error || 'Login gagal. Periksa kembali username dan password.');
   }
 }
 
@@ -72,6 +27,9 @@ export async function loginAdmin(
  * Sign out the current admin session.
  */
 export async function logoutAdmin(): Promise<void> {
+  // Call API to clear HTTP-only cookie
+  await fetch('/api/admin/logout', { method: 'POST' });
+  // Also sign out from Firebase client
   await signOut(auth);
 }
 

@@ -1,49 +1,142 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Auth helper
+
+    // ─── Helper functions ─────────────────────────────────────────────────
+
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Products: Public read, Admin write
-    match /products/{productId} {
-      allow read: if true;
-      allow write: if isAuthenticated();
+    function isValidString(value, minLength, maxLength) {
+      return value is string &&
+             value.size() >= minLength &&
+             value.size() <= maxLength;
     }
 
-    // Orders: Public create/get for confirmation page, Admin list/write/delete
+    function isValidPhone(number) {
+      return number is string &&
+             number.matches(/^628[0-9]{8,12}$/);
+    }
+
+    function isValidOrderItem(item) {
+      return item is map &&
+             isValidString(item.productId, 1, 100) &&
+             isValidString(item.productName, 1, 200) &&
+             item.price is number &&
+             item.price >= 0 &&
+             item.price <= 10000000 &&
+             item.quantity is number &&
+             item.quantity >= 1 &&
+             item.quantity <= 1000 &&
+             item.subtotal is number &&
+             item.subtotal >= 0;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+        'customerName', 'whatsappNumber', 'items',
+        'subtotal', 'total', 'deliveryMethod'
+      ]) &&
+        isValidString(data.customerName, 2, 100) &&
+        isValidPhone(data.whatsappNumber) &&
+        data.items is list &&
+        data.items.size() > 0 &&
+        data.items.size() <= 100 &&
+        data.items.all(isValidOrderItem) &&
+        data.subtotal is number &&
+        data.subtotal >= 0 &&
+        data.total is number &&
+        data.total > 0 &&
+        data.total < 100000000 && // Max 100M
+        data.deliveryMethod in ['pickup', 'delivery'] &&
+        (!data.keys().hasAny(['deliveryFee']) || (data.deliveryFee is number && data.deliveryFee >= 0 && data.deliveryFee <= 1000000));
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'price', 'category', 'isActive']) &&
+             isValidString(data.name, 1, 200) &&
+             data.price is number &&
+             data.price >= 0 &&
+             data.price <= 10000000 && // Max 10M
+             data.category is string;
+    }
+
+    // ─── Products ─────────────────────────────────────────────────────────
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidProduct(request.resource.data);
+      allow update: if isAuthenticated() &&
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['createdAt']); // Prevent createdAt modification
+      allow delete: if isAuthenticated();
+    }
+
+    // ─── Orders ───────────────────────────────────────────────────────────
+
     match /orders/{orderId} {
-      allow create: if true;
+      allow create: if isValidOrder(request.resource.data);
+      allow get: if true;
+      allow list: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['createdAt', 'orderNumber', 'items']); // items frozen after creation
+      allow delete: if isAuthenticated();
+    }
+
+    // ─── Order Lookups ────────────────────────────────────────────────────
+
+    match /orderLookups/{orderNumber} {
+      allow create: if
+        request.resource.data.keys().hasAll(['orderId', 'createdAt']) &&
+        isValidString(request.resource.data.orderId, 1, 200);
       allow get: if true;
       allow list, update, delete: if isAuthenticated();
     }
 
-    // Order lookup: Public create/get for checking status by order number
-    match /orderLookups/{orderNumber} {
-      allow create, get: if true;
-      allow list, update, delete: if isAuthenticated();
-    }
+    // ─── Counters ─────────────────────────────────────────────────────────
 
-    // Counters: Public read/write (untuk order number generator)
     match /counters/{counterId} {
-      allow read, write: if true;
+      // Daily order-number counter, incremented by guest checkout.
+      // Hardened instead of auth-only (which would break guests):
+      // - field shape locked to { count }
+      // - create must start at exactly 1
+      // - update must increment by exactly 1, capped per day
+      allow get: if true;
+      allow create: if
+        request.resource.data.keys().hasOnly(['count']) &&
+        request.resource.data.count == 1;
+      allow update: if
+        request.resource.data.keys().hasOnly(['count']) &&
+        request.resource.data.count is number &&
+        request.resource.data.count == resource.data.count + 1 &&
+        request.resource.data.count < 100000;
     }
 
-    // Customers: Public create/update (untuk upsert saat order), Admin read/delete
+    // ─── Customers ────────────────────────────────────────────────────────
+
     match /customers/{customerId} {
-      allow create, update: if true;
+      // Anyone can create a record for their own phone number
+      allow create: if
+        request.resource.data.keys().hasAll(['name', 'whatsappNumber']) &&
+        request.resource.data.whatsappNumber == customerId;
+      // Admin can update any; unauthenticated only their own
+      allow update: if
+        request.auth != null ||
+        resource.data.whatsappNumber == customerId;
       allow read, delete: if isAuthenticated();
     }
 
-    // Payment Config: Public read, Admin write
+    // ─── Payment Config ───────────────────────────────────────────────────
+
     match /paymentConfig/{configId} {
       allow read: if true;
       allow write: if isAuthenticated();
     }
 
-    // Settings: Public read for customer-facing business info, Admin write
+    // ─── Settings ─────────────────────────────────────────────────────────
+
     match /settings/{settingId} {
       allow read: if true;
       allow write: if isAuthenticated();

@@ -1,6 +1,5 @@
 'use client';
 
-import { useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useUtils';

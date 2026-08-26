@@ -20,6 +20,7 @@ import {
   QuerySnapshot,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { z } from 'zod';
 import type {
   Product,
   Order,
@@ -31,18 +32,73 @@ import type {
 } from '@/types';
 import { format } from 'date-fns';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const ProductSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: z.string(),
+  price: z.number(),
+  imageUrl: z.string(),
+  isActive: z.boolean(),
+  description: z.string().optional(),
+  createdAt: z.any(),
+  updatedAt: z.any(),
+});
 
-function docToProduct(id: string, data: DocumentData): Product {
-  return { id, ...data } as Product;
+const OrderSchema = z.object({
+  id: z.string(),
+  orderNumber: z.string(),
+  customerName: z.string(),
+  whatsappNumber: z.string(),
+  deliveryMethod: z.enum(['pickup', 'delivery']),
+  pickupDateTime: z.string().nullable().optional(),
+  deliveryAddress: z.string().nullable().optional(),
+  deliveryFee: z.number(),
+    items: z.array(z.object({
+    productId: z.string(),
+    productName: z.string(),
+    price: z.number(),
+    quantity: z.number(),
+    subtotal: z.number(),
+    category: z.string().optional(),
+  })),
+  subtotal: z.number(),
+  total: z.number(),
+  status: z.enum(['pending', 'ready', 'completed', 'delivered']),
+  paymentMethod: z.enum(['qris', 'dana', 'transfer']).optional(),
+  paymentStatus: z.enum(['unpaid', 'paid']),
+  paymentProofUrl: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  createdAt: z.any(),
+  updatedAt: z.any(),
+});
+
+const CustomerSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  whatsappNumber: z.string(),
+  totalOrders: z.number(),
+  totalSpending: z.number(),
+  lastOrderAt: z.any(),
+  createdAt: z.any(),
+});
+
+function parseProduct(id: string, data: DocumentData): Product | null {
+  const result = ProductSchema.safeParse({ id, ...data });
+  return result.success ? result.data as Product : null;
 }
 
-function docToOrder(id: string, data: DocumentData): Order {
-  return { id, ...data } as Order;
+function parseOrder(id: string, data: DocumentData): Order | null {
+  const result = OrderSchema.safeParse({ id, ...data });
+  return result.success ? result.data as Order : null;
 }
 
-function docToCustomer(id: string, data: DocumentData): Customer {
-  return { id, ...data } as Customer;
+function parseCustomer(id: string, data: DocumentData): Customer | null {
+  const result = CustomerSchema.safeParse({ id, ...data });
+  return result.success ? result.data as Customer : null;
+}
+
+function nonNull<T>(item: T | null): item is T {
+  return item !== null;
 }
 
 // ─── Products ─────────────────────────────────────────────────────────────────
@@ -55,13 +111,13 @@ export async function getProducts(): Promise<Product[]> {
     orderBy('name')
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => docToProduct(d.id, d.data()));
+  return snap.docs.map((d) => parseProduct(d.id, d.data())).filter(nonNull);
 }
 
 export async function getAllProducts(): Promise<Product[]> {
   const q = query(collection(db, 'products'), orderBy('category'), orderBy('name'));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => docToProduct(d.id, d.data()));
+  return snap.docs.map((d) => parseProduct(d.id, d.data())).filter(nonNull);
 }
 
 export function subscribeToProducts(
@@ -69,7 +125,7 @@ export function subscribeToProducts(
 ): () => void {
   const q = query(collection(db, 'products'), orderBy('category'), orderBy('name'));
   return onSnapshot(q, (snap: QuerySnapshot) => {
-    callback(snap.docs.map((d) => docToProduct(d.id, d.data())));
+    callback(snap.docs.map((d) => parseProduct(d.id, d.data())).filter(nonNull));
   });
 }
 
@@ -100,6 +156,22 @@ export async function deleteProduct(id: string): Promise<void> {
 }
 
 // ─── Order Number Generator ────────────────────────────────────────────────
+//
+// Format: PD-YYYYMMDD-NNN-XXXX (XXXX = random suffix).
+// The daily sequence keeps orders sortable; the random suffix makes numbers
+// unguessable so public lookups (/my-orders, orderLookups) cannot enumerate
+// other customers' orders.
+
+const ORDER_SUFFIX_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I
+
+function randomOrderSuffix(length: number = 4): string {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(
+    bytes,
+    (b) => ORDER_SUFFIX_ALPHABET[b % ORDER_SUFFIX_ALPHABET.length]
+  ).join('');
+}
 
 export async function generateOrderNumber(): Promise<string> {
   const today = format(new Date(), 'yyyyMMdd');
@@ -113,7 +185,7 @@ export async function generateOrderNumber(): Promise<string> {
     return next;
   });
 
-  return `PD-${today}-${String(nextNum).padStart(3, '0')}`;
+  return `PD-${today}-${String(nextNum).padStart(3, '0')}-${randomOrderSuffix()}`;
 }
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
@@ -137,7 +209,7 @@ export async function createOrder(
 export async function getOrder(id: string): Promise<Order | null> {
   const snap = await getDoc(doc(db, 'orders', id));
   if (!snap.exists()) return null;
-  return docToOrder(snap.id, snap.data());
+  return parseOrder(snap.id, snap.data());
 }
 
 export async function updateOrderStatus(
@@ -182,7 +254,7 @@ export function subscribeToOrders(
 
   const q = query(collection(db, 'orders'), ...constraints);
   return onSnapshot(q, (snap: QuerySnapshot) => {
-    callback(snap.docs.map((d) => docToOrder(d.id, d.data())));
+    callback(snap.docs.map((d) => parseOrder(d.id, d.data())).filter(nonNull));
   });
 }
 
@@ -197,7 +269,7 @@ export async function getOrdersByDateRange(
     orderBy('createdAt', 'desc')
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => docToOrder(d.id, d.data()));
+  return snap.docs.map((d) => parseOrder(d.id, d.data())).filter(nonNull);
 }
 
 export async function getRecentOrders(count: number = 5): Promise<Order[]> {
@@ -207,7 +279,7 @@ export async function getRecentOrders(count: number = 5): Promise<Order[]> {
     limit(count)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => docToOrder(d.id, d.data()));
+  return snap.docs.map((d) => parseOrder(d.id, d.data())).filter(nonNull);
 }
 
 // ─── Customers ────────────────────────────────────────────────────────────────
@@ -242,7 +314,7 @@ export async function getCustomers(): Promise<Customer[]> {
     orderBy('lastOrderAt', 'desc')
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => docToCustomer(d.id, d.data()));
+  return snap.docs.map((d) => parseCustomer(d.id, d.data())).filter(nonNull);
 }
 
 export async function getCustomerOrders(whatsappNumber: string): Promise<Order[]> {
@@ -252,7 +324,7 @@ export async function getCustomerOrders(whatsappNumber: string): Promise<Order[]
     orderBy('createdAt', 'desc')
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => docToOrder(d.id, d.data()));
+  return snap.docs.map((d) => parseOrder(d.id, d.data())).filter(nonNull);
 }
 
 export async function getOrderByOrderNumber(orderNumber: string): Promise<Order | null> {
@@ -362,14 +434,14 @@ export async function seedProductsIfEmpty(): Promise<void> {
     ],
   } satisfies PaymentConfig);
 
-  // Seed default business settings
+  // Seed default business settings — ganti dengan data toko sesungguhnya di halaman Settings
   await setDoc(doc(db, 'settings', 'business'), {
     storeName: 'Pempek Domino',
-    address: 'Perumahan Pesanggrahan Kasuari A5, Ponegaran, Jambidan, Banguntapan, Bantul, DI Yogyakarta',
-    whatsappNumber: '6281776400024',
+    address: 'Alamat Toko (ubah di Settings)',
+    whatsappNumber: '6280000000000',
     operationalDays: 'Setiap Hari',
     openingTime: '08:00',
     closingTime: '20:00',
-    googleMapsUrl: 'https://maps.app.goo.gl/AxHH5q4qa9GMi13x6',
+    googleMapsUrl: '',
   } satisfies BusinessSettings);
 }

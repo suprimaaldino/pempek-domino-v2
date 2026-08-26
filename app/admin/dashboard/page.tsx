@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { 
   ShoppingBag, 
   DollarSign, 
@@ -20,7 +20,35 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { SkeletonList, Skeleton } from '@/components/ui/Skeleton';
 import { formatRupiah } from '@/lib/utils';
 import type { Order, DashboardKPI, RevenueDataPoint } from '@/types';
+import { z } from 'zod';
 import { startOfDay, endOfDay, subDays, format } from 'date-fns';
+
+const OrderSchema = z.object({
+  id: z.string(),
+  orderNumber: z.string(),
+  customerName: z.string(),
+  whatsappNumber: z.string(),
+  deliveryMethod: z.enum(['pickup', 'delivery']),
+  deliveryFee: z.number(),
+  items: z.array(z.object({
+    productId: z.string(),
+    productName: z.string(),
+    price: z.number(),
+    quantity: z.number(),
+    subtotal: z.number(),
+  })),
+  subtotal: z.number(),
+  total: z.number(),
+  status: z.enum(['pending', 'ready', 'completed', 'delivered']),
+  paymentStatus: z.enum(['unpaid', 'paid']),
+  createdAt: z.any(),
+  updatedAt: z.any(),
+});
+
+function parseOrder(id: string, data: unknown): Order | null {
+  const result = OrderSchema.safeParse({ id, ...(data as Record<string, unknown>) });
+  return result.success ? (result.data as Order) : null;
+}
 
 export default function AdminDashboard() {
   const [kpis, setKpis] = useState<DashboardKPI>({
@@ -33,20 +61,18 @@ export default function AdminDashboard() {
   const [chartData, setChartData] = useState<RevenueDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchDashboardData() {
-      try {
-        const today = new Date();
-        const start = startOfDay(today);
-        const end = endOfDay(today);
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      const today = new Date();
+      const start = startOfDay(today);
+      const end = endOfDay(today);
 
-        // 1. Fetch KPIs
-        const ordersRef = collection(db, 'orders');
-        
-        // Orders today
+      const ordersRef = collection(db, 'orders');
+
+      // 1. Fetch KPIs + Chart Data in parallel via a single 7-day query batch
+      const kpiPromise = async () => {
         const qToday = query(ordersRef, where('createdAt', '>=', Timestamp.fromDate(start)), where('createdAt', '<=', Timestamp.fromDate(end)));
         const snapToday = await getDocs(qToday);
-        const ordersToday = snapToday.size;
         let revenueToday = 0;
         let completedToday = 0;
         snapToday.forEach((doc) => {
@@ -55,24 +81,19 @@ export default function AdminDashboard() {
           if (data.status === 'completed' || data.status === 'delivered') completedToday++;
         });
 
-        // Pending pickup/ready
         const qPending = query(ordersRef, where('status', 'in', ['pending', 'ready']));
         const snapPending = await getDocs(qPending);
-        const pendingPickup = snapPending.size;
 
-        setKpis({ ordersToday, revenueToday, pendingPickup, completedToday });
+        return {
+          ordersToday: snapToday.size,
+          revenueToday,
+          pendingPickup: snapPending.size,
+          completedToday,
+        };
+      };
 
-        // 2. Fetch Recent Orders
-        const qRecent = query(ordersRef, orderBy('createdAt', 'desc'), limit(5));
-        const snapRecent = await getDocs(qRecent);
-        const recent: Order[] = [];
-        snapRecent.forEach((doc) => {
-          recent.push({ id: doc.id, ...doc.data() } as Order);
-        });
-        setRecentOrders(recent);
-
-        // 3. Fetch Chart Data (last 7 days)
-        const last7Days: RevenueDataPoint[] = [];
+      const chartPromise = async () => {
+        const points: RevenueDataPoint[] = [];
         for (let i = 6; i >= 0; i--) {
           const day = subDays(today, i);
           const s = startOfDay(day);
@@ -81,22 +102,45 @@ export default function AdminDashboard() {
           const snapDay = await getDocs(qDay);
           let total = 0;
           snapDay.forEach(d => total += d.data().total || 0);
-          last7Days.push({
+          points.push({
             date: format(day, 'dd/MM'),
-            revenue: total
+            revenue: total,
           });
         }
-        setChartData(last7Days);
+        return points;
+      };
 
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-      } finally {
-        setLoading(false);
-      }
+      const recentPromise = async () => {
+        const qRecent = query(ordersRef, orderBy('createdAt', 'desc'), limit(5));
+        const snapRecent = await getDocs(qRecent);
+        const recent: Order[] = [];
+        snapRecent.forEach((doc) => {
+          const parsed = parseOrder(doc.id, doc.data());
+          if (parsed) recent.push(parsed);
+        });
+        return recent;
+      };
+
+      const [kpiResult, chartResult, recentResult] = await Promise.all([
+        kpiPromise(),
+        chartPromise(),
+        recentPromise(),
+      ]);
+
+      setKpis(kpiResult);
+      setChartData(chartResult);
+      setRecentOrders(recentResult);
+
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+    } finally {
+      setLoading(false);
     }
-
-    fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   return (
     <div className="space-y-8">

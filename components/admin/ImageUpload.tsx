@@ -20,74 +20,57 @@ export function ImageUpload({ currentUrl, onUploaded, storagePath, label = 'Uplo
   const [preview, setPreview] = useState<string>(currentUrl ?? '');
   const [error, setError] = useState<string | null>(null);
 
-  const handleFile = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setError('File harus berupa gambar.');
+  const handleFile = async (file: File) => {
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setError('Format tidak didukung. Gunakan JPG, PNG, atau WebP.');
       return;
     }
+
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setError('Ukuran file terlalu besar. Maksimal 5MB.');
+      return;
+    }
+
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '');
+    if (sanitizedName !== file.name) {
+      setError('Nama file mengandung karakter tidak valid.');
+      return;
+    }
+
     setError(null);
-    setProgress(20);
+    setProgress(10);
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setProgress(50);
-      const img = new window.Image();
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 400;
-          const MAX_HEIGHT = 400;
-          let width = img.width;
-          let height = img.height;
+    try {
+      const fileName = `${Date.now()}-${sanitizedName}`;
+      const storageRef = ref(storage, `${storagePath}/${fileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            throw new Error('Canvas context not available');
-          }
-
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          // Compress to JPEG with 0.7 quality to get a very small base64 string (typically 15-30 KB)
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-          
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+          setProgress(pct);
+        },
+        () => {
+          setError('Gagal mengupload gambar. Coba lagi.');
+          setProgress(null);
+        },
+        async () => {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
           setProgress(100);
           setTimeout(() => {
-            setPreview(compressedBase64);
-            onUploaded(compressedBase64);
+            setPreview(downloadUrl);
+            onUploaded(downloadUrl);
             setProgress(null);
           }, 150);
-        } catch (err) {
-          console.error(err);
-          setError('Gagal mengompresi gambar.');
-          setProgress(null);
         }
-      };
-      img.onerror = () => {
-        setError('Gagal memproses file gambar.');
-        setProgress(null);
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => {
-      setError('Gagal membaca file.');
+      );
+    } catch {
+      setError('Gagal mengupload gambar.');
       setProgress(null);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -116,6 +99,7 @@ export function ImageUpload({ currentUrl, onUploaded, storagePath, label = 'Uplo
               alt="Preview"
               fill
               className="object-contain"
+              unoptimized
             />
             <button
               type="button"
@@ -134,7 +118,6 @@ export function ImageUpload({ currentUrl, onUploaded, storagePath, label = 'Uplo
           </div>
         )}
 
-        {/* Progress overlay */}
         {progress !== null && (
           <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center gap-2">
             <Loader2 size={24} className="text-primary animate-spin" />

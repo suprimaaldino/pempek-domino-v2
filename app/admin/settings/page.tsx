@@ -70,10 +70,12 @@ export default function SettingsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const { openingHours: _legacy, ...toSave } = businessSettings;
+      const toSave = { ...businessSettings };
+      // Strip the deprecated field instead of writing `undefined` (Firestore rejects it).
+      delete toSave.openingHours;
       await updateBusinessSettings(toSave);
       toastSuccess('Pengaturan bisnis berhasil disimpan');
-    } catch (err) {
+    } catch {
       toastError('Gagal menyimpan pengaturan bisnis');
     } finally {
       setSaving(false);

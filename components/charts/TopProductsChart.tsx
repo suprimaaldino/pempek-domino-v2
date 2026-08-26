@@ -42,7 +42,7 @@ export function TopProductsChart({ data }: TopProductsChartProps) {
           width={110}
         />
         <Tooltip
-          formatter={(value: any) => [`${value} porsi`, 'Terjual']}
+          formatter={(value) => [`${value} porsi`, 'Terjual']}
           contentStyle={{
             borderRadius: '12px',
             border: '1px solid rgba(58,42,32,0.1)',

@@ -11,7 +11,7 @@ interface OrderSummarySheetProps {
 }
 
 export function OrderSummarySheet({ onSubmit, loading }: OrderSummarySheetProps) {
-  const { items, subtotal, deliveryFee, total } = useOrderStore();
+  const { items, deliveryFee, total } = useOrderStore();
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   if (itemCount === 0) return null;

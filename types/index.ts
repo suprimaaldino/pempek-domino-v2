@@ -49,6 +49,7 @@ export interface OrderItem {
   price: number;
   quantity: number;
   subtotal: number;
+  category?: ProductCategory;
 }
 
 export interface Order {
@@ -152,6 +153,12 @@ export interface RevenueDataPoint {
 
 export interface ProductSalesData {
   productName: string;
+  quantity: number;
+  revenue: number;
+}
+
+export interface CategorySalesData {
+  category: ProductCategory;
   quantity: number;
   revenue: number;
 }

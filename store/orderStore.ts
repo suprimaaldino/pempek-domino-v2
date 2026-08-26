@@ -133,6 +133,16 @@ export const useOrderStore = create<OrderState>()(
         subtotal: state.subtotal,
         total: state.total,
       }),
+      // Recompute derived values after rehydration — persisted subtotal/total
+      // can go stale if prices changed while the cart sat in localStorage.
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const subtotal = computeSubtotal(state.items);
+        useOrderStore.setState({
+          subtotal,
+          total: subtotal + state.deliveryFee,
+        });
+      },
     }
   )
 );

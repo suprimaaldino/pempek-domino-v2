@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import Link from 'next/link';
 import { MapPin, Truck, Clock } from 'lucide-react';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
@@ -9,12 +10,16 @@ interface OrderCardProps {
   compact?: boolean;
 }
 
-export function OrderCard({ order, compact = false }: OrderCardProps) {
-  const time = order.createdAt ? formatTime(order.createdAt) : '';
+export const OrderCard = memo(function OrderCard({ order, compact = false }: OrderCardProps) {
+  const time = useMemo(() => 
+    order.createdAt ? formatTime(order.createdAt) : '', 
+    [order.createdAt]
+  );
 
   return (
     <Link
       href={`/admin/orders/${order.id}`}
+      aria-label={`Order ${order.orderNumber} dari ${order.customerName}`}
       className="block bg-white rounded-card shadow-card border border-brown/5 p-4 hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200"
     >
       <div className="flex items-start justify-between gap-2 mb-2">
@@ -51,4 +56,4 @@ export function OrderCard({ order, compact = false }: OrderCardProps) {
       </div>
     </Link>
   );
-}
+});

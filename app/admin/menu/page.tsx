@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  UtensilsCrossed, 
-  PackageCheck, 
-  AlertCircle,
-  PackageSearch
+import {
+  Plus,
+  UtensilsCrossed,
+  PackageCheck,
+  AlertCircle
 } from 'lucide-react';
 import { 
   subscribeToProducts, 
@@ -96,7 +95,7 @@ export default function MenuManagementPage() {
         toastSuccess('Menu baru berhasil ditambahkan');
       }
       setModalOpen(false);
-    } catch (err) {
+    } catch {
       toastError('Gagal menyimpan menu');
     } finally {
       setSubmitting(false);
@@ -107,7 +106,7 @@ export default function MenuManagementPage() {
     try {
       await updateProduct(id, { isActive });
       toastSuccess(`Menu ${isActive ? 'diaktifkan' : 'dinonaktifkan'}`);
-    } catch (err) {
+    } catch {
       toastError('Gagal mengubah status menu');
     }
   };
@@ -117,7 +116,7 @@ export default function MenuManagementPage() {
     try {
       await deleteProduct(id);
       toastSuccess('Menu berhasil dihapus');
-    } catch (err) {
+    } catch {
       toastError('Gagal menghapus menu');
     }
   };

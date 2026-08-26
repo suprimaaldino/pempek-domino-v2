@@ -1,73 +1,44 @@
-import { db, auth } from '../lib/firebase';
-import { collection, doc, setDoc, getDocs, writeBatch } from 'firebase/firestore';
+/**
+ * Seed script — populates products, payment config, and business settings
+ * if the database is empty. Reuses the canonical seeder in lib/firestore.ts.
+ *
+ * Usage (Node 20+, credentials from env — never hardcoded):
+ *   npx tsx --env-file=.env.local scripts/seed.ts
+ *
+ * Requires in .env.local:
+ *   ADMIN_EMAIL      — admin user created in Firebase Auth
+ *   ADMIN_PASSWORD   — its password (only needed locally for this script)
+ *   NEXT_PUBLIC_FIREBASE_* — Firebase project config
+ */
+import { auth } from '../lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { seedProductsIfEmpty } from '../lib/firestore';
 
-const INITIAL_PRODUCTS = [
-  { name: 'Pempek Lenjer Kecil', price: 5000, category: 'kecil', isActive: true, description: 'Pempek lenjer ukuran kecil yang lembut dan gurih.' },
-  { name: 'Pempek Telur Kecil', price: 5000, category: 'kecil', isActive: true, description: 'Pempek telur ukuran kecil dengan isian telur yang pas.' },
-  { name: 'Pempek Adaan', price: 5000, category: 'kecil', isActive: true, description: 'Pempek bulat dengan campuran daun bawang dan santan.' },
-  { name: 'Pempek Kulit', price: 5000, category: 'kecil', isActive: true, description: 'Pempek kulit crispy di luar, kenyal di dalam.' },
-  { name: 'Pempek Keriting', price: 6000, category: 'kecil', isActive: true, description: 'Pempek keriting yang unik dan kenyal.' },
-  { name: 'Pempek Kapal Selam', price: 25000, category: 'besar', isActive: true, description: 'Pempek besar dengan isian 1 butir telur utuh.' },
-  { name: 'Pempek Lenjer Besar', price: 25000, category: 'besar', isActive: true, description: 'Pempek lenjer ukuran besar, cocok untuk porsi kenyang.' },
-  { name: 'Paket 50rb (Campur 10)', price: 50000, category: 'paket', isActive: true, description: 'Paket hemat 10 pcs pempek kecil campur.' },
-  { name: 'Paket 100rb (Campur 20)', price: 100000, category: 'paket', isActive: true, description: 'Paket keluarga 20 pcs pempek kecil campur.' },
-  { name: 'Paket Kapal Selam + 5 Kecil', price: 50000, category: 'paket', isActive: true, description: 'Kombinasi 1 Kapal Selam dan 5 Pempek Kecil.' },
-  { name: 'Cuka Pempek 250ml', price: 15000, category: 'kecil', isActive: true, description: 'Cuka pempek kental, pedas, dan mantap.' },
-  { name: 'Model / Tekwan', price: 15000, category: 'besar', isActive: true, description: 'Menu berkuah gurih khas Palembang.' },
-];
+async function main() {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
-export async function seedProducts() {
-  console.log('🌱 Seeding products...');
-
-  // Try to authenticate as admin first
-  const adminEmail = 'suprimaaldino@gmail.com';
-  const adminPassword = 'p3mp3Kd0m!n0';
-
-  try {
-    console.log(`🔐 Attempting to authenticate as ${adminEmail}...`);
-    await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
-    console.log('🔓 Authenticated successfully.');
-  } catch (authError: any) {
-    console.warn(`⚠️ Authentication skipped/failed: ${authError.message}`);
-    console.log('⚡ Attempting unauthenticated seeding...');
+  if (!adminEmail || !adminPassword) {
+    console.error(
+      '❌ ADMIN_EMAIL and ADMIN_PASSWORD must be set.\n' +
+        '   Run with: npx tsx --env-file=.env.local scripts/seed.ts'
+    );
+    process.exit(1);
   }
 
-  try {
-    const productsRef = collection(db, 'products');
-    const batch = writeBatch(db);
+  console.log(`🔐 Authenticating as ${adminEmail}...`);
+  await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+  console.log('🔓 Authenticated.');
 
-    for (const p of INITIAL_PRODUCTS) {
-      const newDoc = doc(productsRef);
-      batch.set(newDoc, { ...p, createdAt: new Date() });
-    }
-
-    await batch.commit();
-    console.log('✅ Seeding complete!');
-  } catch (error: any) {
-    console.error('❌ Seeding failed!');
-    console.error(error);
-    console.log('\n💡 Troubleshooting Tips:');
-    console.log('1. Make sure you have created the admin user in Firebase Auth:');
-    console.log(`   - Email: ${adminEmail}`);
-    console.log(`   - Password: ${adminPassword}`);
-    console.log('2. Alternatively, temporarily change your Firestore security rules to public:');
-    console.log('   rules_version = \'2\';');
-    console.log('   service cloud.firestore {');
-    console.log('     match /databases/{database}/documents {');
-    console.log('       match /{document=**} {');
-    console.log('         allow read, write: if true;');
-    console.log('       }');
-    console.log('     }');
-    console.log('   }');
-    console.log('   Once seeded, revert back or deploy the rules in firestore.rules.\n');
-    throw error;
-  }
+  await seedProductsIfEmpty();
+  console.log('✅ Seeding complete!');
 }
 
-// Default execution check
 if (require.main === module) {
-  seedProducts().then(() => process.exit(0)).catch((e) => {
-    process.exit(1);
-  });
+  main()
+    .then(() => process.exit(0))
+    .catch((err: unknown) => {
+      console.error('❌ Seeding failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    });
 }

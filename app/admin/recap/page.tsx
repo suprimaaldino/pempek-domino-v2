@@ -1,16 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
-  BarChart3, 
   Download, 
-  Calendar,
   ShoppingBag,
   DollarSign,
   Package
 } from 'lucide-react';
-import { getOrdersByDateRange } from '@/lib/firestore';
-import { formatRupiah, downloadCSV, CATEGORY_LABELS } from '@/lib/utils';
+import { getOrdersByDateRange, getAllProducts } from '@/lib/firestore';
+import { formatRupiah, downloadCSV, getCategoryLabel } from '@/lib/utils';
 import { KPICard } from '@/components/admin/KPICard';
 import { DailyBarChart } from '@/components/charts/DailyBarChart';
 import { TopProductsChart } from '@/components/charts/TopProductsChart';
@@ -19,26 +17,30 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { startOfDay, endOfDay, format, startOfMonth, eachDayOfInterval } from 'date-fns';
-import type { Order, RevenueDataPoint, ProductSalesData } from '@/types';
+import type { Order, RevenueDataPoint, ProductSalesData, CategorySalesData, ProductCategory } from '@/types';
+import { resolveProductCategory } from '@/types';
 
 export default function RecapPage() {
   const [dateFrom, setDateFrom] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Map<string, ProductCategory>>(new Map());
 
   useEffect(() => {
     async function fetchRecap() {
-      setLoading(true);
       try {
         const from = startOfDay(new Date(dateFrom));
         const to = endOfDay(new Date(dateTo));
-        const data = await getOrdersByDateRange(from, to);
+        const [data, allProds] = await Promise.all([
+          getOrdersByDateRange(from, to),
+          getAllProducts(),
+        ]);
         setOrders(data);
+        const map = new Map<string, ProductCategory>();
+        allProds.forEach((p) => map.set(p.id, p.category));
+        setProducts(map);
       } catch (err) {
         console.error(err);
-      } finally {
-        setLoading(false);
       }
     }
     fetchRecap();
@@ -65,6 +67,26 @@ export default function RecapPage() {
     .sort((a, b) => b.quantity - a.quantity);
 
   const totalProductsSold = productStats.reduce((sum, p) => sum + p.quantity, 0);
+
+  // Category Breakdown
+  const categoryBreakdown: CategorySalesData[] = useMemo(() => {
+    const map = new Map<ProductCategory, { quantity: number; revenue: number }>();
+    orders.forEach((order) => {
+      order.items.forEach((item) => {
+        const cat = item.category
+          ? resolveProductCategory(item.category)
+          : (products.get(item.productId) ?? 'lainnya');
+        const existing = map.get(cat) ?? { quantity: 0, revenue: 0 };
+        map.set(cat, {
+          quantity: existing.quantity + item.quantity,
+          revenue: existing.revenue + item.subtotal,
+        });
+      });
+    });
+    return Array.from(map.entries())
+      .map(([category, stats]) => ({ category, ...stats }))
+      .sort((a, b) => b.quantity - a.quantity);
+  }, [orders, products]);
 
   // Daily Chart Data
   const dailyData: RevenueDataPoint[] = eachDayOfInterval({
@@ -164,6 +186,40 @@ export default function RecapPage() {
           </CardBody>
         </Card>
       </div>
+
+      {/* Category Summary */}
+      <Card>
+        <CardHeader
+          title="Ringkasan Per Kategori"
+          subtitle="Total penjualan berdasarkan jenis produk"
+          action={<Badge label={`${categoryBreakdown.length} Kategori`} variant="neutral" />}
+        />
+        <CardBody className="overflow-x-auto pt-0">
+          <table className="w-full text-sm text-left">
+            <thead>
+              <tr className="border-b border-brown/10 text-brown/40 font-semibold uppercase text-[10px] tracking-wider">
+                <th className="py-3 pr-4">Kategori</th>
+                <th className="py-3 px-4 text-center">Terjual</th>
+                <th className="py-3 pl-4 text-right">Total Nilai</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-brown/5">
+              {categoryBreakdown.map((c, i) => (
+                <tr key={i} className="hover:bg-brown/5 transition-colors">
+                  <td className="py-3 pr-4 font-semibold text-brown">{getCategoryLabel(c.category)}</td>
+                  <td className="py-3 px-4 text-center text-brown/60 font-medium">{c.quantity} porsi</td>
+                  <td className="py-3 pl-4 text-right font-bold text-primary">{formatRupiah(c.revenue)}</td>
+                </tr>
+              ))}
+              {categoryBreakdown.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="py-10 text-center text-brown/40 italic">Tidak ada data untuk periode ini.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </CardBody>
+      </Card>
 
       {/* Detailed Table */}
       <Card>

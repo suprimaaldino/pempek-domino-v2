@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Users, Search, Phone, ExternalLink } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { getCustomers } from '@/lib/firestore';
-import { formatRupiah, formatWhatsApp, formatDateShort } from '@/lib/utils';
 import { CustomerCard } from '@/components/admin/CustomerCard';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -73,7 +72,7 @@ export default function CustomersPage() {
               <CustomerCard 
                 key={customer.id} 
                 customer={customer} 
-                onClick={() => window.open(`https://wa.me/${customer.whatsappNumber}`, '_blank')}
+                onClick={() => window.open(`https://wa.me/${customer.whatsappNumber}`, '_blank', 'noopener,noreferrer')}
               />
             ))}
           </div>

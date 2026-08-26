@@ -4,21 +4,20 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Minus, ShoppingBag, Truck, MapPin, Search } from 'lucide-react';
+import { Plus, Minus, Truck, MapPin, Search } from 'lucide-react';
 import { 
   createOrder, 
   generateOrderNumber, 
   upsertCustomer, 
   subscribeToProducts 
 } from '@/lib/firestore';
-import { formatRupiah, normalizePhone, CATEGORY_LABELS } from '@/lib/utils';
+import { formatRupiah, normalizePhone } from '@/lib/utils';
 import { Modal } from '@/components/ui/Modal';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { RadioCard } from '@/components/ui/RadioCard';
-import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
-import type { Product, OrderItem, PaymentMethod, DeliveryMethod } from '@/types';
+import type { Product, OrderItem } from '@/types';
 
 const schema = z.object({
   customerName: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -26,7 +25,7 @@ const schema = z.object({
   deliveryMethod: z.enum(['pickup', 'delivery']),
   pickupDateTime: z.string().optional(),
   deliveryAddress: z.string().optional(),
-  deliveryFee: z.any().transform((v) => Number(v) || 0),
+  deliveryFee: z.coerce.number().min(0),
   paymentMethod: z.enum(['qris', 'dana', 'transfer']),
   paymentStatus: z.enum(['paid', 'unpaid']),
   notes: z.string().optional(),
@@ -84,7 +83,8 @@ export function OrderFormModal({ isOpen, onClose }: OrderFormModalProps) {
       const current = prev[id] || 0;
       const next = Math.max(0, current + delta);
       if (next === 0) {
-        const { [id]: _, ...rest } = prev;
+        const rest = { ...prev };
+        delete rest[id];
         return rest;
       }
       return { ...prev, [id]: next };
@@ -145,7 +145,7 @@ export function OrderFormModal({ isOpen, onClose }: OrderFormModalProps) {
       reset();
       setCart({});
       onClose();
-    } catch (err) {
+    } catch {
       toastError('Gagal membuat pesanan');
     } finally {
       setSubmitting(false);
@@ -171,11 +171,11 @@ export function OrderFormModal({ isOpen, onClose }: OrderFormModalProps) {
               <div className="grid grid-cols-2 gap-2">
                 <RadioCard 
                   id="adm-pickup" name="deliveryMethod" value="pickup" label="Pickup" icon={<MapPin size={14} />}
-                  checked={deliveryMethod === 'pickup'} onChange={(v) => reset({ ...watch(), deliveryMethod: 'pickup' })}
+                  checked={deliveryMethod === 'pickup'} onChange={() => reset({ ...watch(), deliveryMethod: 'pickup' })}
                 />
                 <RadioCard 
                   id="adm-delivery" name="deliveryMethod" value="delivery" label="Dikirim" icon={<Truck size={14} />}
-                  checked={deliveryMethod === 'delivery'} onChange={(v) => reset({ ...watch(), deliveryMethod: 'delivery' })}
+                  checked={deliveryMethod === 'delivery'} onChange={() => reset({ ...watch(), deliveryMethod: 'delivery' })}
                 />
               </div>
             </div>

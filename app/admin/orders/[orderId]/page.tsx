@@ -2,20 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  User, 
-  Phone, 
-  MapPin, 
-  Truck, 
-  Clock, 
-  CreditCard, 
-  MessageCircle, 
-  CheckCircle2, 
-  Edit,
-  Trash2,
-  MoreVertical,
-  Calendar
+import {
+  ArrowLeft,
+  User,
+  Phone,
+  Truck,
+  MessageCircle,
+  CheckCircle2,
+  Trash2
 } from 'lucide-react';
 import { getOrder, updateOrderStatus, updateOrder, deleteOrder } from '@/lib/firestore';
 import { 
@@ -28,7 +22,7 @@ import {
   DELIVERY_METHOD_LABELS,
   PAYMENT_METHOD_LABELS
 } from '@/lib/utils';
-import { OrderStatusBadge, PaymentStatusBadge, Badge } from '@/components/ui/Badge';
+import { PaymentStatusBadge, Badge } from '@/components/ui/Badge';
 import { StatusStepper } from '@/components/ui/StatusStepper';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -73,7 +67,7 @@ export default function OrderDetailPage() {
       await updateOrderStatus(orderId, newStatus);
       setOrder({ ...order, status: newStatus });
       toastSuccess(`Pesanan ditandai sebagai ${ORDER_STATUS_LABELS[newStatus]}`);
-    } catch (err) {
+    } catch {
       toastError('Gagal memperbarui status');
     } finally {
       setUpdating(false);
@@ -88,7 +82,7 @@ export default function OrderDetailPage() {
       await updateOrder(orderId, { paymentStatus: newStatus });
       setOrder({ ...order, paymentStatus: newStatus });
       toastSuccess(`Pembayaran ditandai sebagai ${PAYMENT_STATUS_LABELS[newStatus]}`);
-    } catch (err) {
+    } catch {
       toastError('Gagal memperbarui status pembayaran');
     } finally {
       setUpdating(false);
@@ -101,7 +95,7 @@ export default function OrderDetailPage() {
       await deleteOrder(orderId);
       toastSuccess('Pesanan berhasil dihapus');
       router.push('/admin/orders');
-    } catch (err) {
+    } catch {
       toastError('Gagal menghapus pesanan');
       setUpdating(false);
       setShowDeleteConfirm(false);

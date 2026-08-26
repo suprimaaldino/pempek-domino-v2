@@ -22,15 +22,18 @@ Production-ready Progressive Web App (PWA) untuk sistem manajemen pre-order Pemp
 ## 📦 Persiapan Instalasi
 
 ### 1. Prasyarat
-- Node.js 18+
+- Node.js 20+ (dibutuhkan `--env-file` untuk script seed)
 - Akun Firebase (Free/Spark Plan)
 
 ### 2. Setup Firebase
 - Buat project baru di [Firebase Console](https://console.firebase.google.com).
 - Aktifkan **Firestore**, **Authentication** (Metode Email/Password), dan **Storage**.
-- Tambahkan Admin User di menu Auth:
-  - Email: `suprimaaldino@gmail.com`
-  - Password: `p3mp3Kd0m!n0`
+- Tambahkan Admin User di menu Auth dengan email & password pilihan Anda.
+- Simpan email dan password tersebut di `.env.local` — **jangan pernah** menulis kredensial di repo atau README.
+- Deploy security rules sebelum produksi:
+  ```bash
+  npx firebase deploy --only firestore:rules,storage
+  ```
 - Buat file `.env.local` dan isi dengan kredensial dari project settings.
 
 ### 3. Konfigurasi Environment
@@ -38,16 +41,18 @@ Salin `.env.local.example` ke `.env.local` dan isi dengan kredensial Firebase An
 ```bash
 cp .env.local.example .env.local
 ```
-**PENTING**: Generate hash password admin menggunakan `bcryptjs` dan simpan di `ADMIN_PASSWORD_HASH`. Untuk password default `p3mp3Kd0m!n0`, hash-nya adalah:
-`$2a$10$7vN3vYtJ6lW6w6v6v6v6vO6m6m6m6m6m6m6m6m6m6m6m6m6m6m` (Atau generate baru).
+**PENTING**: Generate hash password admin menggunakan `bcryptjs` dan simpan di `ADMIN_PASSWORD_HASH`:
+```bash
+node -e "const b=require('bcryptjs');console.log(b.hashSync('password_anda',12))"
+```
 
 ### 4. Menjalankan Aplikasi
 ```bash
 # Install dependencies
 npm install
 
-# Seed data awal (Produk)
-npx tsx scripts/seed.ts
+# Seed data awal (Produk) — kredensial dibaca dari .env.local
+npx tsx --env-file=.env.local scripts/seed.ts
 
 # Jalankan dev server
 npm run dev

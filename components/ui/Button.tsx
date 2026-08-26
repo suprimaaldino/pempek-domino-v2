@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
@@ -32,7 +32,7 @@ const sizeClasses: Record<ButtonSize, string> = {
   lg: 'px-6 py-3.5 text-base rounded-pill',
 };
 
-export function Button({
+export const Button = memo(function Button({
   variant = 'primary',
   size = 'md',
   loading = false,
@@ -69,4 +69,4 @@ export function Button({
       {children}
     </button>
   );
-}
+});

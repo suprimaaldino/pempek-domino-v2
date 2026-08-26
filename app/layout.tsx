@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ToastProvider } from '@/components/ui/Toast';
 import { PWAUpdateBanner } from '@/components/PWAUpdateBanner';
+import { BottomNav } from '@/components/BottomNav';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 export const metadata: Metadata = {
   title: {
@@ -32,25 +34,25 @@ export const viewport: Viewport = {
   themeColor: '#8B1E1E',
 };
 
-import { BottomNav } from '@/components/BottomNav';
-
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang="id">
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body suppressHydrationWarning>
-        <ToastProvider>
-          <PWAUpdateBanner />
-          {children}
-          <BottomNav />
-        </ToastProvider>
+      <body suppressHydrationWarning className="bg-cream">
+        <ErrorBoundary>
+          <ToastProvider>
+            <PWAUpdateBanner />
+            {children}
+            <BottomNav />
+          </ToastProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
