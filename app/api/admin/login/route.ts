@@ -9,10 +9,14 @@ if (!ADMIN_EMAIL) {
   console.error('[AUTH] Missing ADMIN_EMAIL environment variable');
 }
 
-// Simple in-memory rate limiting
-const attempts = new Map<string, { count: number; resetTime: number }>();
+// Rate limiting
+// NOTE: In-memory rate limiting resets on serverless cold starts.
+// Firebase Auth itself enforces 5 login attempts per hour per email,
+// so this serves as an additional defense-in-depth layer.
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+const attempts = new Map<string, { count: number; resetTime: number }>();
 
 function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
   const now = Date.now();
@@ -33,8 +37,8 @@ function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
 
 export async function POST(req: NextRequest) {
   // Get client IP
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
-             req.headers.get('x-real-ip') || 
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0] ||
+             req.headers.get('x-real-ip') ||
              'unknown';
 
   // Check rate limit
@@ -68,34 +72,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate username
-    if (username !== expectedUsername) {
-      console.log('[AUTH] Failed login attempt - invalid username');
+    // Validate username — generic message to prevent username enumeration
+    const usernameValid = username === expectedUsername;
+    if (!usernameValid) {
+      console.log('[AUTH] Failed login attempt from IP:', ip);
       return NextResponse.json(
-        { error: 'Username atau password salah.' },
-        { status: 401, headers: { 'X-RateLimit-Remaining': String(rateLimit.remaining) } }
+        { error: 'Kredensial tidak valid.' },
+        { status: 401 }
       );
     }
 
-    // Validate password with bcrypt
-    const valid = await bcrypt.compare(password, passwordHash);
-    if (!valid) {
-      console.log('[AUTH] Failed login attempt - invalid password');
+    // Validate password with bcrypt — generic message
+    const passwordValid = await bcrypt.compare(password, passwordHash);
+    if (!passwordValid) {
+      console.log('[AUTH] Failed login attempt (wrong password) from IP:', ip);
       return NextResponse.json(
-        { error: 'Username atau password salah.' },
-        { status: 401, headers: { 'X-RateLimit-Remaining': String(rateLimit.remaining) } }
+        { error: 'Kredensial tidak valid.' },
+        { status: 401 }
       );
     }
 
-    // Sign in with Firebase
+    // Sign in with Firebase Auth
     try {
       const userCredential = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, password);
       const token = await userCredential.user.getIdToken();
 
-      // Reset rate limit on success
+      // Reset rate limit on successful login
       attempts.delete(ip);
 
-      // Set HTTP-only cookie
+      // Set HTTP-only cookie (24 hours — reduced from 7 days for security)
       const response = NextResponse.json({ success: true });
       response.cookies.set({
         name: 'firebaseAuthToken',
@@ -103,7 +108,7 @@ export async function POST(req: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: 60 * 60 * 24, // 24 hours
         path: '/',
       });
 

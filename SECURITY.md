@@ -82,14 +82,18 @@ Jika menemukan kerentanan keamanan, silakan laporkan ke [email admin] dengan det
 ## Security Checklist
 
 - [x] Server-side authentication
-- [x] Rate limiting
-- [x] Input sanitization
-- [x] Firestore security rules
-- [x] HTTP security headers
+- [x] Rate limiting (login: 5 per 15 min, order lookup: 10 per min)
+- [x] Input sanitization (DOMPurify + custom validators)
+- [x] Firestore security rules (orders: admin-only read)
+- [x] HTTP security headers (CSP, X-Frame-Options, X-XSS-Protection, HSTS)
 - [x] HTTPS enforcement
-- [x] File upload validation
-- [x] XSS protection
-- [x] Clickjacking protection
+- [x] File upload validation (MIME type + size limit)
+- [x] XSS protection (DOMPurify + sanitization functions)
+- [x] Clickjacking protection (X-Frame-Options: DENY)
+- [x] Admin role verification (email-based, not just token validity)
+- [x] Generic error messages (prevents username enumeration)
+- [x] Short-lived auth cookies (24 hours)
+- [x] Public order lookup via API route (excludes sensitive data)
 - [ ] Regular dependency updates (manual)
 - [ ] Security audit berkala (manual)
 

@@ -14,7 +14,7 @@ import {
   PackageSearch,
   ShieldAlert,
 } from 'lucide-react';
-import { getOrderByOrderNumber, getBusinessSettings } from '@/lib/firestore';
+import { getBusinessSettings } from '@/lib/firestore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
@@ -202,12 +202,21 @@ export default function MyOrdersPage() {
     setOrder(undefined);
 
     try {
-      const result = await getOrderByOrderNumber(trimmed);
-      if (!result) {
-        setOrder(null);
-        setError('');
+      const response = await fetch(`/api/order/${encodeURIComponent(trimmed)}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          setOrder(null);
+          setError('');
+        } else {
+          throw new Error('Failed to fetch');
+        }
       } else {
-        setOrder(result);
+        const data = await response.json();
+        // Map API response to Order type (compatible with existing UI)
+        setOrder({
+          id: data.orderNumber,
+          ...data,
+        } as Order);
       }
     } catch {
       setError('Gagal memuat data. Periksa koneksi internet kamu.');

@@ -19,7 +19,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useOrderStore } from '@/store/orderStore';
 import { useProducts } from '@/hooks/useProducts';
-import { createOrder, generateOrderNumber, upsertCustomer, getPaymentConfig, seedProductsIfEmpty, getBusinessSettings } from '@/lib/firestore';
+import { createOrder, generateOrderNumber, upsertCustomer, getPaymentConfig, getBusinessSettings } from '@/lib/firestore';
 import { normalizePhone, CATEGORY_LABELS } from '@/lib/utils';
 import { sanitizeName, validateOrderData } from '@/lib/sanitize';
 import type { PaymentConfig, PaymentMethod, DeliveryMethod, BusinessSettings, ProductCategory } from '@/types';
@@ -28,7 +28,7 @@ const schema = z.object({
   customerName: z.string().min(2, 'Nama minimal 2 karakter'),
   whatsappNumber: z
     .string()
-    .regex(/^(08|628|\+628)[0-9]{8,11}$/, 'Nomor WhatsApp tidak valid (contoh: 081234567890)'),
+    .regex(/^628[0-9]{8,12}$/, 'Format: 628xxxxxxxxxx (10-14 digit setelah 628)'),
   notes: z.string(),
   deliveryMethod: z.enum(['pickup', 'delivery']),
   pickupDateTime: z.string(),
@@ -117,7 +117,6 @@ export default function OrderPage() {
     getBusinessSettings().then((biz) => {
       setBusinessSettings(biz);
     }).catch(() => {});
-    seedProductsIfEmpty().catch(() => {});
   }, [setValue]);
 
   useEffect(() => {
@@ -313,7 +312,7 @@ export default function OrderPage() {
                 type="tel"
                 inputMode="tel"
                 error={errors.whatsappNumber?.message}
-                helperText="Format: 08xxxxxxxxxx atau +62xxxxxxxxx"
+                helperText="Format: 628xxxxxxxxxx (10-14 digit)"
                 {...register('whatsappNumber', {
                   onChange: (e) => setCustomerInfo({ whatsappNumber: e.target.value }),
                 })}
