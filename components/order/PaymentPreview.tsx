@@ -1,40 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import Image from 'next/image';
-import { QrCode, Smartphone, Building2, ZoomIn, Download, X, Copy, Check, AlertCircle } from 'lucide-react';
+import { QrCode, Smartphone, Building2, ZoomIn, Download, X, Copy, Check } from 'lucide-react';
 import type { PaymentConfig, PaymentMethodItem } from '@/types';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
 
 interface PaymentPreviewProps {
   method: string;
   config: PaymentConfig | null;
-}
-
-interface ToastProps {
-  message: string;
-  type: 'success' | 'error';
-  onClose: () => void;
-}
-
-// Toast Component
-function Toast({ message, type, onClose }: ToastProps) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-[200] animate-in slide-in-from-bottom-5 fade-in duration-300">
-      <div className={`flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ${
-        type === 'success' ? 'bg-success' : 'bg-error'
-      } text-white min-w-[200px] max-w-[90vw]`}>
-        {type === 'success' ? <Check size={18} /> : <AlertCircle size={18} />}
-        <span className="text-sm font-medium">{message}</span>
-      </div>
-    </div>
-  );
 }
 
 // Helper to get fallback method config
@@ -125,22 +101,22 @@ function PaymentInfo({
 export function PaymentPreview({ method, config }: PaymentPreviewProps) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const handleCopy = useCallback(async (text: string, fieldId: string) => {
     if (!text || text === '-') {
-      setToast({ message: 'Tidak ada nomor untuk disalin', type: 'error' });
+      toastError('Tidak ada nomor untuk disalin');
       return;
     }
 
     try {
       await navigator.clipboard.writeText(text);
       setCopiedField(fieldId);
-      setToast({ message: 'Nomor berhasil disalin ✓', type: 'success' });
+      toastSuccess('Nomor berhasil disalin ✓');
       setTimeout(() => setCopiedField(null), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
-      setToast({ message: 'Gagal menyalin, silakan coba lagi', type: 'error' });
+      toastError('Gagal menyalin, silakan coba lagi');
     }
   }, []);
 
@@ -226,8 +202,6 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
           </CardBody>
         </Card>
 
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-
         {/* Zoom Lightbox Modal */}
         {isZoomed && qrisUrl && (
           <div
@@ -306,7 +280,6 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
           onCopy={handleCopy}
           note={`Transfer ke ${activeMethod.provider} di atas, lalu upload bukti bayar ke WhatsApp`}
         />
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </>
     );
   }
@@ -326,14 +299,9 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
           onCopy={handleCopy}
           note="Transfer sesuai total pesanan, lalu upload bukti bayar ke WhatsApp"
         />
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </>
     );
   }
 
-  return (
-    <>
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </>
-  );
+  return null;
 }
