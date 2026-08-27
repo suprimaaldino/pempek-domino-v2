@@ -49,16 +49,19 @@ export default function SettingsPage() {
   const { success: toastSuccess, error: toastError } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
     async function fetchData() {
       try {
+        setError(null);
         const biz = await getBusinessSettings();
         if (biz) setBusinessSettings(normalizeBusinessSettings(biz));
       } catch (err) {
         console.error(err);
+        setError('Gagal memuat pengaturan. Silakan coba lagi.');
       } finally {
         setLoading(false);
       }
@@ -103,6 +106,13 @@ export default function SettingsPage() {
           <p className="text-brown/50">Kelola profil bisnis toko.</p>
         </div>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-error/10 text-error rounded-card p-4 text-center">
+          <p className="font-semibold">{error}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSaveBusiness}>
         <Card>

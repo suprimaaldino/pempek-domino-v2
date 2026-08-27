@@ -10,19 +10,10 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { RevenueDataPoint } from '@/types';
+import { ChartTooltip } from './ChartTooltip';
 
 interface DailyBarChartProps {
   data: RevenueDataPoint[];
-}
-
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-brown/10 rounded-input px-3 py-2 shadow-card text-sm">
-      <p className="font-semibold text-brown mb-1">{label}</p>
-      <p className="text-primary font-bold">Rp {payload[0].value.toLocaleString('id-ID')}</p>
-    </div>
-  );
 }
 
 export function DailyBarChart({ data }: DailyBarChartProps) {
@@ -42,8 +33,8 @@ export function DailyBarChart({ data }: DailyBarChartProps) {
           tickLine={false}
           tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
         />
-        <Tooltip content={<CustomTooltip />} />
-        <Bar dataKey="revenue" fill="#8B1E1E" radius={[6, 6, 0, 0]} />
+        <Tooltip content={<ChartTooltip />} />
+        <Bar dataKey="revenue" fill="#D42B2B" radius={[6, 6, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

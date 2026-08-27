@@ -1,8 +1,6 @@
-'use client';
+import { useEffect, useState } from 'react';
 
-import { useState, useEffect, useRef } from 'react';
-
-export function useDebounce<T>(value: T, delay = 300): T {
+export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
@@ -11,23 +9,4 @@ export function useDebounce<T>(value: T, delay = 300): T {
   }, [value, delay]);
 
   return debouncedValue;
-}
-
-export function useLocalStorage<T>(key: string, initial: T) {
-  const [value, setValue] = useState<T>(() => {
-    if (typeof window === 'undefined') return initial;
-    try {
-      const stored = localStorage.getItem(key);
-      return stored ? (JSON.parse(stored) as T) : initial;
-    } catch {
-      return initial;
-    }
-  });
-
-  const set = (newValue: T) => {
-    setValue(newValue);
-    localStorage.setItem(key, JSON.stringify(newValue));
-  };
-
-  return [value, set] as const;
 }

@@ -10,21 +10,10 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { RevenueDataPoint } from '@/types';
+import { ChartTooltip } from './ChartTooltip';
 
 interface RevenueLineChartProps {
   data: RevenueDataPoint[];
-}
-
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-brown/10 rounded-input px-3 py-2 shadow-card text-sm">
-      <p className="font-semibold text-brown mb-1">{label}</p>
-      <p className="text-primary font-bold">
-        Rp {payload[0].value.toLocaleString('id-ID')}
-      </p>
-    </div>
-  );
 }
 
 export function RevenueLineChart({ data }: RevenueLineChartProps) {
@@ -44,14 +33,14 @@ export function RevenueLineChart({ data }: RevenueLineChartProps) {
           tickLine={false}
           tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<ChartTooltip />} />
         <Line
           type="monotone"
           dataKey="revenue"
-          stroke="#D9A441"
+          stroke="#D42B2B"
           strokeWidth={2.5}
-          dot={{ r: 3, fill: '#D9A441', strokeWidth: 0 }}
-          activeDot={{ r: 5, fill: '#D9A441' }}
+          dot={{ r: 3, fill: '#D42B2B', strokeWidth: 0 }}
+          activeDot={{ r: 5, fill: '#D42B2B' }}
         />
       </LineChart>
     </ResponsiveContainer>

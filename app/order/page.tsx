@@ -113,10 +113,14 @@ export default function OrderPage() {
           setValue('paymentMethod', firstActive.id);
         }
       }
-    }).catch(() => {});
+    }).catch(() => {
+      toastError('Gagal memuat konfigurasi pembayaran. Beberapa fitur mungkin terbatas.');
+    });
     getBusinessSettings().then((biz) => {
       setBusinessSettings(biz);
-    }).catch(() => {});
+    }).catch(() => {
+      toastError('Gagal memuat informasi toko.');
+    });
   }, [setValue]);
 
   useEffect(() => {

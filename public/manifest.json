@@ -5,8 +5,8 @@
   "start_url": "/order",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#FFF8F0",
-  "theme_color": "#8B1E1E",
+  "background_color": "#F7F7F7",
+  "theme_color": "#D42B2B",
   "categories": ["food", "shopping"],
   "icons": [
     {

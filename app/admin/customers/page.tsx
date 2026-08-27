@@ -13,14 +13,17 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchCustomers() {
       try {
+        setError(null);
         const data = await getCustomers();
         setCustomers(data);
       } catch (err) {
         console.error(err);
+        setError('Gagal memuat data pelanggan. Silakan coba lagi.');
       } finally {
         setLoading(false);
       }
@@ -62,6 +65,11 @@ export default function CustomersPage() {
 
       {/* List */}
       <div className="space-y-4">
+        {error && (
+          <div className="bg-error/10 text-error rounded-card p-4 text-center">
+            <p className="font-semibold">{error}</p>
+          </div>
+        )}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <SkeletonList count={6} />

@@ -20,7 +20,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-100 safe-area-pb"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-100 shadow-card safe-area-pb"
       aria-label="Navigasi bawah"
     >
       <div className="flex items-center justify-around px-4 py-2 max-w-lg mx-auto">
@@ -34,6 +34,8 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
+              aria-label={label}
+              aria-current={isActive ? 'page' : undefined}
               className="flex flex-col items-center gap-1 py-1 px-4 relative"
             >
               <div

@@ -25,15 +25,18 @@ export default function RecapPage() {
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Map<string, ProductCategory>>(new Map());
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchRecap() {
-      try {
-        const from = startOfDay(new Date(dateFrom));
-        const to = endOfDay(new Date(dateTo));
-        const [data, allProds] = await Promise.all([
-          getOrdersByDateRange(from, to),
-          getAllProducts(),
+    const timer = setTimeout(async () => {
+      async function fetchRecap() {
+        try {
+          setError(null);
+          const from = startOfDay(new Date(dateFrom));
+          const to = endOfDay(new Date(dateTo));
+          const [data, allProds] = await Promise.all([
+            getOrdersByDateRange(from, to),
+            getAllProducts(),
         ]);
         setOrders(data);
         const map = new Map<string, ProductCategory>();
@@ -41,9 +44,12 @@ export default function RecapPage() {
         setProducts(map);
       } catch (err) {
         console.error(err);
+        setError('Gagal memuat data rekap. Silakan coba lagi.');
       }
     }
     fetchRecap();
+    }, 300);
+    return () => clearTimeout(timer);
   }, [dateFrom, dateTo]);
 
   // Derived Statistics
@@ -129,6 +135,13 @@ export default function RecapPage() {
         </Button>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <div className="bg-error/10 text-error rounded-card p-4 text-center">
+          <p className="font-semibold">{error}</p>
+        </div>
+      )}
+
       {/* Date Picker */}
       <Card className="bg-white">
         <CardBody className="flex flex-col sm:flex-row items-end gap-4">
@@ -167,7 +180,7 @@ export default function RecapPage() {
           title="Produk Terjual" 
           value={`${totalProductsSold} Porsi`} 
           icon={<Package size={20} />} 
-          colorClass="bg-accent/10 text-accent"
+          colorClass="bg-indigo-100 text-indigo-600"
         />
       </div>
 

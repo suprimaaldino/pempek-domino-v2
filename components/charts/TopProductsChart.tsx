@@ -16,7 +16,7 @@ interface TopProductsChartProps {
   data: ProductSalesData[];
 }
 
-const COLORS = ['#8B1E1E', '#B01E1E', '#D9A441', '#C08930', '#E67E22'];
+const COLORS = ['#D42B2B', '#F45050', '#B82222', '#F88080', '#971A1A'];
 
 export function TopProductsChart({ data }: TopProductsChartProps) {
   return (

@@ -28,7 +28,7 @@ function Toast({ message, type, onClose }: ToastProps) {
   return (
     <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-[200] animate-in slide-in-from-bottom-5 fade-in duration-300">
       <div className={`flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ${
-        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        type === 'success' ? 'bg-success' : 'bg-error'
       } text-white min-w-[200px] max-w-[90vw]`}>
         {type === 'success' ? <Check size={18} /> : <AlertCircle size={18} />}
         <span className="text-sm font-medium">{message}</span>

@@ -86,7 +86,7 @@ export default function AdminLoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Masukkan password"
                 leftIcon={<Lock size={18} />}
-                autoComplete="new-password"
+                autoComplete="current-password"
                 rightIcon={
                   <button
                     type="button"

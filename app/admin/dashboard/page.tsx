@@ -60,6 +60,7 @@ export default function AdminDashboard() {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [chartData, setChartData] = useState<RevenueDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -93,21 +94,21 @@ export default function AdminDashboard() {
       };
 
       const chartPromise = async () => {
-        const points: RevenueDataPoint[] = [];
+        const sevenDaysAgo = startOfDay(subDays(today, 6));
+        const qWeek = query(ordersRef, where('createdAt', '>=', Timestamp.fromDate(sevenDaysAgo)));
+        const snapWeek = await getDocs(qWeek);
+
+        const dayMap = new Map<string, number>();
         for (let i = 6; i >= 0; i--) {
-          const day = subDays(today, i);
-          const s = startOfDay(day);
-          const e = endOfDay(day);
-          const qDay = query(ordersRef, where('createdAt', '>=', Timestamp.fromDate(s)), where('createdAt', '<=', Timestamp.fromDate(e)));
-          const snapDay = await getDocs(qDay);
-          let total = 0;
-          snapDay.forEach(d => total += d.data().total || 0);
-          points.push({
-            date: format(day, 'dd/MM'),
-            revenue: total,
-          });
+          dayMap.set(format(subDays(today, i), 'dd/MM'), 0);
         }
-        return points;
+        snapWeek.forEach(doc => {
+          const data = doc.data();
+          const created = data.createdAt?.toDate?.() ?? new Date();
+          const day = format(created, 'dd/MM');
+          dayMap.set(day, (dayMap.get(day) || 0) + (data.total || 0));
+        });
+        return Array.from(dayMap.entries()).map(([date, revenue]) => ({ date, revenue }));
       };
 
       const recentPromise = async () => {
@@ -133,6 +134,7 @@ export default function AdminDashboard() {
 
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
+      setError('Gagal memuat data dashboard. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -157,6 +159,16 @@ export default function AdminDashboard() {
           </Button>
         </Link>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-error/10 text-error rounded-card p-4 text-center">
+          <p className="font-semibold">{error}</p>
+          <Button variant="outline" size="sm" className="mt-2" onClick={fetchDashboardData}>
+            Coba Lagi
+          </Button>
+        </div>
+      )}
 
       {/* KPI Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

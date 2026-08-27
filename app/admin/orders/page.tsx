@@ -1,6 +1,8 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Plus } from 'lucide-react';
+import Link from 'next/link';
 import { useAdminStore } from '@/store/adminStore';
 import { useOrders } from '@/hooks/useOrders';
 import { OrderCard } from '@/components/admin/OrderCard';
@@ -33,13 +35,13 @@ export default function OrdersListPage() {
   useOrders();
 
   // Calculate counts for badges
-  const counts = {
+  const counts = useMemo(() => ({
     all: orders.length,
     pending: orders.filter(o => o.status === 'pending').length,
     ready: orders.filter(o => o.status === 'ready').length,
     delivered: orders.filter(o => o.status === 'delivered').length,
     completed: orders.filter(o => o.status === 'completed').length,
-  };
+  }), [orders]);
 
   const tabsWithCounts = STATUS_TABS.map(tab => ({
     ...tab,
@@ -54,11 +56,13 @@ export default function OrdersListPage() {
           <h1 className="font-display font-bold text-3xl text-brown">Daftar Pesanan</h1>
           <p className="text-brown/50">Kelola semua pesanan masuk di sini.</p>
         </div>
-        <Button>
-          <Plus size={18} />
-          <span className="hidden sm:inline">Pesanan Baru</span>
-          <span className="sm:hidden">Baru</span>
-        </Button>
+        <Link href="/order" target="_blank">
+          <Button>
+            <Plus size={18} />
+            <span className="hidden sm:inline">Pesanan Baru</span>
+            <span className="sm:hidden">Baru</span>
+          </Button>
+        </Link>
       </div>
 
       {/* Filters */}

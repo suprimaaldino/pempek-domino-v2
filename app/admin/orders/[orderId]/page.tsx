@@ -248,7 +248,9 @@ export default function OrderDetailPage() {
                 <div>
                   <label className="text-xs text-brown/40 block">WhatsApp</label>
                   <a 
-                    href={`tel:${order.whatsappNumber}`}
+                    href={`https://wa.me/${order.whatsappNumber.replace(/^0/, '62')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="font-semibold text-primary hover:underline flex items-center gap-1"
                   >
                     <Phone size={12} />

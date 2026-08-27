@@ -22,7 +22,7 @@ export function SearchInput({ placeholder = 'Cari...', onSearch, className, id }
 
   return (
     <div className={cn('relative', className)}>
-      <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-brown/40 pointer-events-none" />
+      <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
       <input
         id={id}
         type="search"
@@ -31,9 +31,9 @@ export function SearchInput({ placeholder = 'Cari...', onSearch, className, id }
         placeholder={placeholder}
         aria-label={placeholder}
         className={cn(
-          'w-full rounded-input border border-brown/20 bg-white',
-          'pl-10 pr-10 py-2.5 text-brown text-sm',
-          'placeholder:text-brown/40',
+          'w-full rounded-input border border-neutral-200 bg-white',
+          'pl-10 pr-10 py-2.5 text-neutral-900 text-sm',
+          'placeholder:text-neutral-400',
           'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary',
           'transition-all duration-150'
         )}
@@ -42,7 +42,7 @@ export function SearchInput({ placeholder = 'Cari...', onSearch, className, id }
         <button
           onClick={() => setValue('')}
           aria-label="Hapus pencarian"
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-brown/40 hover:text-brown/70 transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition-colors"
         >
           <X size={16} />
         </button>

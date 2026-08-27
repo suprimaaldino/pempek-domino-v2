@@ -31,11 +31,24 @@ export default function ConfirmationPage() {
       .finally(() => setLoading(false));
   }, [orderId]);
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (order) {
-      navigator.clipboard.writeText(order.orderNumber);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      try {
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(order.orderNumber);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = order.orderNumber;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+        }
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // Fallback silently
+      }
     }
   };
 
@@ -93,7 +106,7 @@ export default function ConfirmationPage() {
   return (
     <main className="min-h-screen bg-neutral-50 pb-8">
       {/* Success header */}
-      <div className="bg-primary px-4 pt-safe-top pb-10 text-white text-center">
+      <div className="bg-gradient-brand px-4 pt-safe-top pb-10 text-white text-center">
         <div className="max-w-lg mx-auto pt-6">
           <div className="w-16 h-16 rounded-full bg-white/15 flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 size={36} className="text-white" />
@@ -258,7 +271,7 @@ export default function ConfirmationPage() {
               Cek Status Pesanan
             </Button>
             <p className="text-[11px] text-center text-neutral-400 leading-normal px-2">
-              💡 Salin <b>No. Pesanan</b> di atas terlebih dahulu, kemudian klik tombol ini untuk memantau status pesananmu secara real-time.
+              💡 Salin <span className="font-bold">No. Pesanan</span> di atas terlebih dahulu, kemudian klik tombol ini untuk memantau status pesananmu secara real-time.
             </p>
           </div>
           <Button
