@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
       attempts.delete(ip);
 
       // Set HTTP-only cookie (24 hours — reduced from 7 days for security)
-      const response = NextResponse.json({ success: true });
+      const response = NextResponse.json({ success: true, adminEmail: ADMIN_EMAIL });
       response.cookies.set({
         name: 'firebaseAuthToken',
         value: token,

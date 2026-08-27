@@ -1,4 +1,5 @@
 import {
+  signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   User,
@@ -6,8 +7,10 @@ import {
 import { auth } from '@/lib/firebase';
 
 /**
- * Login admin via secure API route.
+ * Login admin via secure API route, then sync client-side Firebase Auth.
  * Password verification happens server-side to prevent hash exposure.
+ * After server confirms credentials, we also sign in on the client so
+ * the client-side onAuthStateChanged listener fires correctly.
  */
 export async function loginAdmin(username: string, password: string): Promise<void> {
   const response = await fetch('/api/admin/login', {
@@ -20,6 +23,14 @@ export async function loginAdmin(username: string, password: string): Promise<vo
 
   if (!response.ok) {
     throw new Error(data.error || 'Login gagal. Periksa kembali username dan password.');
+  }
+
+  // Server auth succeeded — now sign in on the client so the
+  // Firebase Auth state listener (onAuthStateChanged) fires with a user.
+  // The password was already transmitted over HTTPS to our API,
+  // so sending it to Firebase Auth (also HTTPS) is safe here.
+  if (data.adminEmail) {
+    await signInWithEmailAndPassword(auth, data.adminEmail, password);
   }
 }
 
