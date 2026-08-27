@@ -63,7 +63,7 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               // 'unsafe-eval' only in dev (Next.js HMR/workbox); never in prod.
-              "script-src 'self' 'unsafe-inline'" + (isDev ? " 'unsafe-eval'" : '') + " https://*.firebaseapp.com https://*.googleapis.com",
+              "script-src 'self' 'unsafe-inline'" + (isDev ? " 'unsafe-eval'" : '') + " https://*.firebaseapp.com https://*.googleapis.com https://accounts.google.com https://*.gstatic.com https://www.googletagmanager.com https://apis.google.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://*.googleapis.com https://*.firebaseapp.com https://firebasestorage.googleapis.com",
               "font-src 'self'",
