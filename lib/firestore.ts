@@ -75,7 +75,9 @@ const OrderSchema = z.object({
 const CustomerSchema = z.object({
   id: z.string(),
   name: z.string(),
-  whatsappNumber: z.string(),
+  whatsappNumber: z.string().optional().default(''),
+  email: z.string().optional().default(''),
+  photoURL: z.string().optional().default(''),
   totalOrders: z.number(),
   totalSpending: z.number(),
   lastOrderAt: z.any(),
@@ -336,6 +338,44 @@ export async function getCustomerOrders(whatsappNumber: string): Promise<Order[]
   );
   const snap = await getDocs(q);
   return snap.docs.map((d) => parseOrder(d.id, d.data())).filter(nonNull);
+}
+
+// ─── Customer by Email (Google Auth) ──────────────────────────────────────────
+
+export async function getCustomerByEmail(email: string): Promise<Customer | null> {
+  const snap = await getDoc(doc(db, 'customers', email));
+  if (!snap.exists()) return null;
+  return parseCustomer(snap.id, snap.data());
+}
+
+export async function upsertCustomerFromGoogle(
+  name: string,
+  email: string,
+  phone?: string,
+  photoURL?: string
+): Promise<void> {
+  const now = Timestamp.now();
+  const docId = email.toLowerCase().trim();
+  const customerRef = doc(db, 'customers', docId);
+
+  const updateData: Record<string, unknown> = {
+    name,
+    email: docId,
+    lastOrderAt: now,
+    createdAt: now,
+  };
+
+  // Only update phone if provided
+  if (phone) {
+    updateData.whatsappNumber = phone;
+  }
+
+  // Only update photoURL if provided
+  if (photoURL) {
+    updateData.photoURL = photoURL;
+  }
+
+  await setDoc(customerRef, updateData, { merge: true });
 }
 
 export async function getOrderByOrderNumber(orderNumber: string): Promise<Order | null> {

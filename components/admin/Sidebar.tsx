@@ -15,7 +15,7 @@ import {
   Settings as SettingsIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { logoutAdmin } from '@/lib/auth';
+import { logout } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import { MobileMoreSheet } from './MobileMoreSheet';
@@ -46,7 +46,7 @@ export function AdminSidebar() {
 
   const handleLogout = async () => {
     try {
-      await logoutAdmin();
+      await logout();
       router.push('/admin/login');
     } catch {
       toastError('Gagal logout. Coba lagi.');

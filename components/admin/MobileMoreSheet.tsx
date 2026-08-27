@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { logoutAdmin } from '@/lib/auth';
+import { logout } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 
@@ -49,7 +49,7 @@ export function MobileMoreSheet({ isOpen, onClose }: MobileMoreSheetProps) {
 
   const handleLogout = async () => {
     try {
-      await logoutAdmin();
+      await logout();
       onClose();
       router.push('/admin/login');
     } catch {

@@ -1,46 +1,43 @@
 import {
-  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
   signOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   User,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+const googleProvider = new GoogleAuthProvider();
+
 /**
- * Login admin via secure API route, then sync client-side Firebase Auth.
- * Password verification happens server-side to prevent hash exposure.
- * After server confirms credentials, we also sign in on the client so
- * the client-side onAuthStateChanged listener fires correctly.
+ * Login with Google. Returns the authenticated user.
+ * After login, check user.email === ADMIN_EMAIL to determine admin access.
  */
-export async function loginAdmin(username: string, password: string): Promise<void> {
-  const response = await fetch('/api/admin/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Login gagal. Periksa kembali username dan password.');
-  }
-
-  // Server auth succeeded — now sign in on the client so the
-  // Firebase Auth state listener (onAuthStateChanged) fires with a user.
-  // The password was already transmitted over HTTPS to our API,
-  // so sending it to Firebase Auth (also HTTPS) is safe here.
-  if (data.adminEmail) {
-    await signInWithEmailAndPassword(auth, data.adminEmail, password);
-  }
+export async function loginWithGoogle(): Promise<User> {
+  const result = await signInWithPopup(auth, googleProvider);
+  return result.user;
 }
 
 /**
- * Sign out the current admin session.
+ * Check if the current user is an admin.
  */
-export async function logoutAdmin(): Promise<void> {
-  // Call API to clear HTTP-only cookie
-  await fetch('/api/admin/logout', { method: 'POST' });
-  // Also sign out from Firebase client
+export function isAdmin(user: User | null): boolean {
+  if (!user || !ADMIN_EMAIL) return false;
+  return user.email === ADMIN_EMAIL;
+}
+
+/**
+ * Get the admin email from environment.
+ */
+export function getAdminEmail(): string | undefined {
+  return ADMIN_EMAIL;
+}
+
+/**
+ * Sign out the current user.
+ */
+export async function logout(): Promise<void> {
   await signOut(auth);
 }
 

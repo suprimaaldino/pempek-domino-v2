@@ -2,19 +2,24 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingBag, ClipboardList, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/order', label: 'Menu', icon: ShoppingBag },
   { href: '/my-orders', label: 'Pesanan', icon: ClipboardList },
-  { href: '/admin/login', label: 'Admin', icon: ShieldCheck },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
 
+  // Hide on admin pages and confirmation page
   if (pathname.startsWith('/admin') || pathname.startsWith('/confirmation')) {
+    return null;
+  }
+
+  // Hide on landing page (login page)
+  if (pathname === '/') {
     return null;
   }
 
@@ -25,10 +30,7 @@ export function BottomNav() {
     >
       <div className="flex items-center justify-around px-4 py-2 max-w-lg mx-auto">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const isActive =
-            href === '/order'
-              ? pathname === '/order' || pathname === '/'
-              : pathname.startsWith(href);
+          const isActive = pathname === href;
 
           return (
             <Link
@@ -36,7 +38,7 @@ export function BottomNav() {
               href={href}
               aria-label={label}
               aria-current={isActive ? 'page' : undefined}
-              className="flex flex-col items-center gap-1 py-1 px-4 relative"
+              className="flex flex-col items-center gap-1 py-1 px-6 relative"
             >
               <div
                 className={cn(

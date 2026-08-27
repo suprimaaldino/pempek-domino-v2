@@ -19,10 +19,12 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useOrderStore } from '@/store/orderStore';
 import { useProducts } from '@/hooks/useProducts';
-import { createOrder, generateOrderNumber, upsertCustomer, getPaymentConfig, getBusinessSettings } from '@/lib/firestore';
+import { createOrder, generateOrderNumber, upsertCustomer, upsertCustomerFromGoogle, getPaymentConfig, getBusinessSettings, getCustomerByEmail } from '@/lib/firestore';
+import { onAuthStateChanged } from '@/lib/auth';
 import { normalizePhone, CATEGORY_LABELS } from '@/lib/utils';
 import { sanitizeName, validateOrderData } from '@/lib/sanitize';
 import type { PaymentConfig, PaymentMethod, DeliveryMethod, BusinessSettings, ProductCategory } from '@/types';
+import type { User } from 'firebase/auth';
 
 const schema = z.object({
   customerName: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -79,6 +81,8 @@ export default function OrderPage() {
     minuman: false,
     lainnya: false,
   });
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [autoFillLoaded, setAutoFillLoaded] = useState(false);
 
   const {
     register,
@@ -133,6 +137,34 @@ export default function OrderPage() {
   useEffect(() => {
     setPaymentMethod(paymentMethodVal as PaymentMethod);
   }, [paymentMethodVal, setPaymentMethod]);
+
+  // Auto-fill from Google Auth + Firestore customer data
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(async (user) => {
+      setAuthUser(user);
+      if (user && !autoFillLoaded) {
+        setAutoFillLoaded(true);
+        // Auto-fill name from Google
+        if (user.displayName) {
+          setValue('customerName', user.displayName);
+          setCustomerInfo({ customerName: user.displayName });
+        }
+        // Try to get phone from Firestore
+        if (user.email) {
+          try {
+            const customer = await getCustomerByEmail(user.email);
+            if (customer?.whatsappNumber) {
+              setValue('whatsappNumber', customer.whatsappNumber);
+              setCustomerInfo({ whatsappNumber: customer.whatsappNumber });
+            }
+          } catch {
+            // Customer not found yet — that's OK
+          }
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [setValue, setCustomerInfo, autoFillLoaded]);
 
   const onSubmit = async (data: FormValues) => {
     if (items.length === 0) {
@@ -194,7 +226,17 @@ export default function OrderPage() {
       });
 
       try {
-        await upsertCustomer(sanitizedData.customerName, sanitizedData.whatsappNumber, sanitizedData.total);
+        // Save customer data — use email-based upsert if logged in with Google
+        if (authUser?.email) {
+          await upsertCustomerFromGoogle(
+            sanitizedData.customerName,
+            authUser.email,
+            sanitizedData.whatsappNumber,
+            authUser.photoURL || undefined
+          );
+        } else {
+          await upsertCustomer(sanitizedData.customerName, sanitizedData.whatsappNumber, sanitizedData.total);
+        }
       } catch (custErr) {
         console.error('Failed to upsert customer details:', custErr);
       }

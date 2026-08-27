@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { onAuthStateChanged } from '@/lib/auth';
+import { onAuthStateChanged, isAdmin } from '@/lib/auth';
 import { AdminSidebar } from '@/components/admin/Sidebar';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -18,22 +18,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const unsubscribe = onAuthStateChanged((firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
-      
-      if (!firebaseUser && pathname !== '/admin/login') {
-        router.replace('/admin/login');
+
+      // Not logged in → redirect to landing page
+      if (!firebaseUser) {
+        router.replace('/');
+        return;
+      }
+
+      // Logged in but not admin → redirect to order page
+      if (!isAdmin(firebaseUser)) {
+        router.replace('/order');
       }
     });
 
     return () => unsubscribe();
-  }, [pathname, router, setUser, setLoading]);
+  }, [router, setUser, setLoading]);
 
   // Prevent flash during mount
   if (!mounted) return null;
-
-  // Login page doesn't need sidebar and guard
-  if (pathname === '/admin/login') {
-    return <>{children}</>;
-  }
 
   if (isLoading) {
     return (
@@ -43,7 +45,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (!user) {
+  // Not logged in or not admin → don't render
+  if (!user || !isAdmin(user)) {
     return null;
   }
 
