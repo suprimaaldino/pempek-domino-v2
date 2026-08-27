@@ -104,7 +104,7 @@ export default function ConfirmationPage() {
   const waLink = generateWhatsAppLink(waPhone, buildWhatsAppMessage(order));
 
   return (
-    <main className="min-h-screen bg-neutral-50 pb-8">
+    <main className="min-h-screen bg-neutral-50 pb-8 animate-page-in">
       {/* Success header */}
       <div className="bg-gradient-brand px-4 pt-safe-top pb-10 text-white text-center">
         <div className="max-w-lg mx-auto pt-6">

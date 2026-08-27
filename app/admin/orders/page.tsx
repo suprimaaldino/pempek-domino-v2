@@ -49,7 +49,7 @@ export default function OrdersListPage() {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-page-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -84,7 +84,7 @@ export default function OrdersListPage() {
         {ordersLoading ? (
           <SkeletonList count={5} />
         ) : filteredOrders.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-stagger">
             {filteredOrders.map((order) => (
               <OrderCard key={order.id} order={order} />
             ))}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,37 @@ const sizeClasses = {
 };
 
 export function Modal({ isOpen, onClose, title, children, size = 'md', className }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Mount animation
+  useEffect(() => {
+    if (isOpen) {
+      setMounted(true);
+      setClosing(false);
+      // Trigger entrance on next frame
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setVisible(true);
+        });
+      });
+    }
+  }, [isOpen]);
+
+  // Close with exit animation
+  const handleClose = () => {
+    setClosing(true);
+    setVisible(false);
+    setTimeout(() => {
+      setMounted(false);
+      setClosing(false);
+      onClose();
+    }, 150);
+  };
+
+  // Lock body scroll
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -31,18 +62,17 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', className
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
+  // Escape key
   useEffect(() => {
     if (!isOpen) return;
-
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
     };
-
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!mounted) return null;
 
   return createPortal(
     <div
@@ -53,17 +83,22 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', className
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
+        className={cn(
+          'absolute inset-0 bg-black/50 backdrop-blur-sm',
+          visible ? 'animate-modal-backdrop' : 'animate-modal-backdrop-out'
+        )}
+        onClick={handleClose}
         aria-hidden="true"
       />
       {/* Panel */}
       <div
+        ref={panelRef}
         className={cn(
           'relative w-full bg-white shadow-card-lg z-10',
           'rounded-t-card sm:rounded-card',
           'max-h-[90vh] overflow-y-auto',
           sizeClasses[size],
+          visible ? 'animate-modal-panel' : 'animate-modal-panel-out',
           className
         )}
       >
@@ -71,9 +106,9 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', className
           <div className="flex items-center justify-between p-4 border-b border-brown/10">
             <h2 className="font-display font-bold text-brown text-xl">{title}</h2>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               aria-label="Tutup"
-              className="p-2 rounded-full hover:bg-brown/10 transition-colors"
+              className="p-2 rounded-full hover:bg-brown/10 active:scale-95 transition-all"
             >
               <X size={20} className="text-brown/60" />
             </button>

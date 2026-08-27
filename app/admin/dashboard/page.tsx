@@ -145,7 +145,7 @@ export default function AdminDashboard() {
   }, [fetchDashboardData]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-page-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
       )}
 
       {/* KPI Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-stagger">
         <KPICard 
           title="Pesanan Hari Ini" 
           value={String(kpis.ordersToday)} 
@@ -236,7 +236,7 @@ export default function AdminDashboard() {
             </Link>
           </div>
           
-          <div className="space-y-3">
+          <div className="space-y-3 animate-stagger">
             {loading ? (
               <SkeletonList count={3} />
             ) : recentOrders.length > 0 ? (

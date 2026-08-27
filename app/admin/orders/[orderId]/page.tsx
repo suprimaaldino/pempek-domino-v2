@@ -233,7 +233,7 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Customer & Sidebar Info */}
-        <div className="space-y-6">
+    <div className="space-y-6 animate-page-in">
           <Card>
             <CardBody className="space-y-4">
               <h3 className="font-semibold text-brown flex items-center gap-2">

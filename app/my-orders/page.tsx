@@ -226,7 +226,7 @@ export default function MyOrdersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-50 pb-24">
+    <main className="min-h-screen bg-neutral-50 pb-24 animate-page-in">
       {/* Header */}
       <div className="bg-white border-b border-neutral-100 px-4 pt-safe-top pb-4">
         <div className="max-w-lg mx-auto pt-3">

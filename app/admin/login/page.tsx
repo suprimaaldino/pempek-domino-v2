@@ -53,7 +53,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-cream flex items-center justify-center p-4">
+    <main className="min-h-screen bg-cream flex items-center justify-center p-4 animate-page-in">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8 flex flex-col items-center justify-center">
           <div className="w-24 h-24 rounded-2xl overflow-visible bg-primary flex items-center justify-center flex-shrink-0">

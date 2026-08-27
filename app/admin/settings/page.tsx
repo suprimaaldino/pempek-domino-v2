@@ -95,7 +95,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-page-in">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-brown/10 pb-6">
         <div className="p-2 rounded-lg bg-brown/5 text-brown">

@@ -123,7 +123,7 @@ export default function MenuManagementPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-page-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brown/10 pb-6">
         <div>
@@ -167,7 +167,7 @@ export default function MenuManagementPage() {
                 <h2 className="text-sm font-bold text-brown/40 uppercase tracking-widest mb-4 border-l-4 border-primary pl-3">
                   {CATEGORY_LABELS[cat]}
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-stagger">
                   {catProds.map(product => (
                     <MenuItemCard 
                       key={product.id} 

@@ -41,7 +41,7 @@ export default function CustomersPage() {
   }, [customers, searchQuery]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-page-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brown/10 pb-6">
         <div>
@@ -75,7 +75,7 @@ export default function CustomersPage() {
             <SkeletonList count={6} />
           </div>
         ) : filteredCustomers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-stagger">
             {filteredCustomers.map(customer => (
               <CustomerCard 
                 key={customer.id} 
