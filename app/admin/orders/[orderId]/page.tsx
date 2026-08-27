@@ -162,6 +162,11 @@ export default function OrderDetailPage() {
               <StatusStepper status={order.status} />
               
               <div className="mt-8 flex flex-wrap gap-2 pt-6 border-t border-brown/5">
+                {order.status === 'cancelled' && (
+                  <Button variant="danger" size="sm" disabled>
+                    Pesanan Dibatalkan
+                  </Button>
+                )}
                 {order.status === 'pending' && (
                   <Button size="sm" onClick={() => handleStatusUpdate('ready')} loading={updating}>
                     Tandai Siap

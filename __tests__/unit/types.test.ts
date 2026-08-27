@@ -316,10 +316,12 @@ describe('Type Safety', () => {
       ready: 2,
       delivered: 3,
       completed: 4,
+      cancelled: 5,
     };
 
     expect(statusMap.pending).toBe(1);
     expect(statusMap.completed).toBe(4);
+    expect(statusMap.cancelled).toBe(5);
   });
 
   test('payment method types are distinct', () => {

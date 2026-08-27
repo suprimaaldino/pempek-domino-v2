@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ClipboardList,
@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   PackageSearch,
   ShieldAlert,
+  XCircle,
 } from 'lucide-react';
 import { getBusinessSettings } from '@/lib/firestore';
 import { Input } from '@/components/ui/Input';
@@ -23,10 +24,50 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { formatRupiah, formatDateId, DELIVERY_METHOD_LABELS, cn } from '@/lib/utils';
 import type { Order, BusinessSettings } from '@/types';
 
+// ─── Saved Orders (localStorage) ──────────────────────────────────────────────
+
+interface SavedOrder {
+  orderNumber: string;
+  orderId: string;
+  customerName: string;
+}
+
+function getSavedOrders(): SavedOrder[] {
+  try {
+    return JSON.parse(localStorage.getItem('pempek-domino-orders') || '[]');
+  } catch {
+    return [];
+  }
+}
+
 // ─── Order Detail Card ─────────────────────────────────────────────────────────
 
-function OrderDetailCard({ order, settings }: { order: Order; settings?: BusinessSettings | null }) {
+function OrderDetailCard({
+  order,
+  settings,
+  onCancelled,
+}: {
+  order: Order;
+  settings?: BusinessSettings | null;
+  onCancelled?: () => void;
+}) {
   const [expanded, setExpanded] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancel = async () => {
+    if (!window.confirm('Yakin ingin membatalkan pesanan ini?')) return;
+    setCancelling(true);
+    try {
+      const res = await fetch(`/api/order/${encodeURIComponent(order.orderNumber)}/cancel`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal membatalkan pesanan');
+      onCancelled?.();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal membatalkan pesanan');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   return (
     <div
@@ -172,6 +213,22 @@ function OrderDetailCard({ order, settings }: { order: Order; settings?: Busines
               </p>
             </div>
           )}
+
+          {/* Cancel order (only for pending) */}
+          {order.status === 'pending' && (
+            <div className="pt-2">
+              <Button
+                variant="danger"
+                size="sm"
+                className="w-full"
+                onClick={handleCancel}
+                loading={cancelling}
+              >
+                <XCircle size={15} />
+                Batalkan Pesanan
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -187,41 +244,59 @@ export default function MyOrdersPage() {
   const [order, setOrder] = useState<Order | null | undefined>(undefined);
   const [error, setError] = useState('');
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
+  const [savedOrders, setSavedOrders] = useState<SavedOrder[]>([]);
 
+  // Load saved orders from localStorage + auto-load most recent
   useEffect(() => {
     getBusinessSettings().then(setSettings).catch(console.error);
-  }, []);
+    const saved = getSavedOrders();
+    setSavedOrders(saved);
+    // Auto-load most recent saved order if no order is currently viewed
+    if (saved.length > 0 && !order) {
+      loadOrderByNumber(saved[saved.length - 1].orderNumber);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = orderNumber.trim();
-    if (!trimmed) return;
-
+  async function loadOrderByNumber(orderNum: string) {
+    setOrderNumber(orderNum);
     setLoading(true);
     setError('');
     setOrder(undefined);
-
     try {
-      const response = await fetch(`/api/order/${encodeURIComponent(trimmed)}`);
+      const response = await fetch(`/api/order/${encodeURIComponent(orderNum)}`);
       if (!response.ok) {
         if (response.status === 404) {
           setOrder(null);
           setError('');
+          // Remove from saved if not found
+          const updated = getSavedOrders().filter(s => s.orderNumber !== orderNum);
+          localStorage.setItem('pempek-domino-orders', JSON.stringify(updated));
+          setSavedOrders(updated);
         } else {
           throw new Error('Failed to fetch');
         }
       } else {
         const data = await response.json();
-        // Map API response to Order type (compatible with existing UI)
-        setOrder({
-          id: data.orderNumber,
-          ...data,
-        } as Order);
+        setOrder({ id: data.orderNumber, ...data } as Order);
       }
     } catch {
       setError('Gagal memuat data. Periksa koneksi internet kamu.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = orderNumber.trim();
+    if (!trimmed) return;
+    await loadOrderByNumber(trimmed);
+  }
+
+  function handleOrderCancelled() {
+    // Refresh the current order to show cancelled status
+    if (order) {
+      loadOrderByNumber(order.orderNumber);
     }
   }
 
@@ -265,7 +340,7 @@ export default function MyOrdersPage() {
               setError('');
             }}
             error={error}
-            helperText="Nomor pesanan ada di halaman konfirmasi setelah kamu memesan"
+            helperText="Atau pilih dari pesanan tersimpan di bawah"
           />
           <Button
             type="submit"
@@ -308,12 +383,31 @@ export default function MyOrdersPage() {
         {/* Result: found */}
         {order && (
           <ErrorBoundary>
-            <OrderDetailCard order={order} settings={settings} />
+            <OrderDetailCard order={order} settings={settings} onCancelled={handleOrderCancelled} />
           </ErrorBoundary>
         )}
 
+        {/* Saved orders from localStorage */}
+        {savedOrders.length > 0 && !order && !loading && (
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-2">Pesanan Tersimpan</p>
+            <div className="flex flex-wrap gap-2">
+              {savedOrders.map((saved) => (
+                <button
+                  key={saved.orderNumber}
+                  onClick={() => loadOrderByNumber(saved.orderNumber)}
+                  className="bg-white border border-neutral-200 rounded-card px-3 py-2 text-left hover:border-primary/30 hover:bg-primary/5 transition-all shadow-sm"
+                >
+                  <p className="font-mono text-xs font-bold text-primary">{saved.orderNumber}</p>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">{saved.customerName}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* CTA sebelum search */}
-        {order === undefined && !loading && (
+        {order === undefined && !loading && savedOrders.length === 0 && (
           <div className="text-center py-10 text-neutral-400">
             <ClipboardList size={36} className="mx-auto mb-3 opacity-20" />
             <p className="text-sm font-medium">Masukkan nomor pesanan untuk melihat statusnya</p>

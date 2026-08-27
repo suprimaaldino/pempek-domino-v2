@@ -13,6 +13,7 @@ const ORDER: Record<OrderStatus, number> = {
   ready: 1,
   completed: 2,
   delivered: 2,
+  cancelled: -1,
 };
 
 interface StatusStepperProps {
@@ -21,6 +22,17 @@ interface StatusStepperProps {
 
 export function StatusStepper({ status }: StatusStepperProps) {
   const currentIdx = ORDER[status];
+
+  if (status === 'cancelled') {
+    return (
+      <div className="flex items-center justify-center gap-2 py-3" aria-label="Pesanan dibatalkan">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center border-2 bg-error border-error text-white text-xs font-bold">
+          ✕
+        </div>
+        <span className="text-sm font-semibold text-error">Pesanan Dibatalkan</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-0" aria-label="Status pesanan">

@@ -39,7 +39,7 @@ export interface Product {
 // ─── Order ───────────────────────────────────────────────────────────────────
 
 export type DeliveryMethod = 'pickup' | 'delivery';
-export type OrderStatus = 'pending' | 'ready' | 'completed' | 'delivered';
+export type OrderStatus = 'pending' | 'ready' | 'completed' | 'delivered' | 'cancelled';
 export type PaymentMethod = 'qris' | 'dana' | 'transfer';
 export type PaymentStatus = 'unpaid' | 'paid';
 

@@ -38,6 +38,7 @@ export const OrderStatusBadge = memo(function OrderStatusBadge({ status }: { sta
     ready: { label: 'Siap', variant: 'info' },
     completed: { label: 'Selesai', variant: 'success' },
     delivered: { label: 'Dikirim', variant: 'success' },
+    cancelled: { label: 'Dibatalkan', variant: 'error' },
   };
   const { label, variant } = map[status];
   return <Badge label={label} variant={variant} />;

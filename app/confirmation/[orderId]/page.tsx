@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CheckCircle2, MessageCircle, RefreshCcw, Truck, MapPin, Clock, ClipboardList, Copy, Check } from 'lucide-react';
+import { CheckCircle2, MessageCircle, RefreshCcw, Truck, MapPin, Clock, ClipboardList, Copy, Check, XCircle } from 'lucide-react';
 import { getOrder } from '@/lib/firestore';
 import { getBusinessSettings } from '@/lib/firestore';
 import { formatRupiah, formatDateId, formatWhatsApp, generateWhatsAppLink, PAYMENT_METHOD_LABELS, DELIVERY_METHOD_LABELS } from '@/lib/utils';
@@ -10,15 +10,18 @@ import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
+import { useToast } from '@/components/ui/Toast';
 import type { Order, BusinessSettings } from '@/types';
 
 export default function ConfirmationPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const router = useRouter();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [order, setOrder] = useState<Order | null>(null);
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -27,6 +30,18 @@ export default function ConfirmationPage() {
     ]).then(([ord, sett]) => {
       setOrder(ord);
       setSettings(sett);
+      // Save order to localStorage for easy access on my-orders page
+      if (ord) {
+        try {
+          const saved = JSON.parse(localStorage.getItem('pempek-domino-orders') || '[]') as Array<{ orderNumber: string; orderId: string; customerName: string }>;
+          const exists = saved.some(s => s.orderNumber === ord.orderNumber);
+          if (!exists) {
+            saved.push({ orderNumber: ord.orderNumber, orderId: ord.id, customerName: ord.customerName });
+            if (saved.length > 20) saved.splice(0, saved.length - 20);
+            localStorage.setItem('pempek-domino-orders', JSON.stringify(saved));
+          }
+        } catch { /* localStorage may be unavailable */ }
+      }
     }).catch(console.error)
       .finally(() => setLoading(false));
   }, [orderId]);
@@ -49,6 +64,22 @@ export default function ConfirmationPage() {
       } catch {
         // Fallback silently
       }
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!order || !window.confirm('Yakin ingin membatalkan pesanan ini?')) return;
+    setCancelling(true);
+    try {
+      const res = await fetch(`/api/order/${encodeURIComponent(order.orderNumber)}/cancel`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal membatalkan pesanan');
+      setOrder({ ...order, status: 'cancelled' });
+      toastSuccess('Pesanan berhasil dibatalkan');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Gagal membatalkan pesanan');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -248,6 +279,25 @@ export default function ConfirmationPage() {
             <p className="text-sm font-semibold text-neutral-800 mb-0.5">Informasi Pembayaran</p>
             <p className="text-xs text-neutral-500">
               Jika pembayaran belum selesai, gunakan {PAYMENT_METHOD_LABELS[order.paymentMethod ?? 'qris']} lalu kirim bukti pembayaran ke WhatsApp kami. Abaikan jika sudah dibayar.
+            </p>
+          </div>
+        )}
+
+        {/* Cancel order (only for pending orders) */}
+        {order.status === 'pending' && (
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="danger"
+              size="lg"
+              className="w-full"
+              onClick={handleCancel}
+              loading={cancelling}
+            >
+              <XCircle size={18} />
+              Batalkan Pesanan
+            </Button>
+            <p className="text-[11px] text-center text-neutral-400 leading-normal px-2">
+              Pesanan yang sudah diproses tidak dapat dibatalkan.
             </p>
           </div>
         )}

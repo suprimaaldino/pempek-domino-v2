@@ -200,6 +200,16 @@ export default function OrderPage() {
       }
 
       clearCart();
+
+      // Save order to localStorage for easy access on my-orders page
+      try {
+        const saved = JSON.parse(localStorage.getItem('pempek-domino-orders') || '[]') as Array<{ orderNumber: string; orderId: string; customerName: string }>;
+        saved.push({ orderNumber, orderId, customerName: sanitizedData.customerName });
+        // Keep only last 20 orders per device
+        if (saved.length > 20) saved.splice(0, saved.length - 20);
+        localStorage.setItem('pempek-domino-orders', JSON.stringify(saved));
+      } catch { /* localStorage may be unavailable */ }
+
       toastSuccess('Pesanan berhasil dibuat!');
       router.push(`/confirmation/${orderId}`);
     } catch (err) {

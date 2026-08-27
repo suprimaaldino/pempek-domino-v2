@@ -63,7 +63,7 @@ const OrderSchema = z.object({
   })),
   subtotal: z.number(),
   total: z.number(),
-  status: z.enum(['pending', 'ready', 'completed', 'delivered']),
+  status: z.enum(['pending', 'ready', 'completed', 'delivered', 'cancelled']),
   paymentMethod: z.enum(['qris', 'dana', 'transfer']).optional(),
   paymentStatus: z.enum(['unpaid', 'paid']),
   paymentProofUrl: z.string().nullable().optional(),
@@ -234,6 +234,17 @@ export async function updateOrder(
 
 export async function deleteOrder(id: string): Promise<void> {
   await deleteDoc(doc(db, 'orders', id));
+}
+
+export async function cancelOrder(id: string): Promise<void> {
+  const snap = await getDoc(doc(db, 'orders', id));
+  if (!snap.exists()) throw new Error('Pesanan tidak ditemukan');
+  const order = snap.data() as Order;
+  if (order.status !== 'pending') throw new Error('Pesanan yang sudah diproses tidak dapat dibatalkan');
+  await updateDoc(doc(db, 'orders', id), {
+    status: 'cancelled',
+    updatedAt: Timestamp.now(),
+  });
 }
 
 export function subscribeToOrders(

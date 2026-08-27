@@ -116,6 +116,7 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
   ready: 'Siap',
   completed: 'Selesai',
   delivered: 'Dikirim',
+  cancelled: 'Dibatalkan',
 };
 
 export const PAYMENT_STATUS_LABELS: Record<string, string> = {
