@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["https://pempek-domino-v2.firebaseapp.com", "https://pempek-domino-v2.firebasestorage.app", "https://pempekdomino.vercel.app"],
+    "origin": ["https://pempek-domino-v2.firebaseapp.com", "https://pempek-domino-v2.firebasestorage.app", "https://pempekdomino.vercel.app", "https://pempekdomino.cc.cd"],
     "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
     "responseHeader": ["Content-Type", "Authorization", "x-goog-meta-*"],
     "maxAgeSeconds": 3600
