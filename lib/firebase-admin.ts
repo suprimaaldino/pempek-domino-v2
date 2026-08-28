@@ -5,6 +5,7 @@
  */
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
+import { getFirestore } from 'firebase-admin/firestore';
 
 let app: App;
 
@@ -23,4 +24,5 @@ if (getApps().length === 0) {
 }
 
 export const adminStorage = getStorage(app);
+export const adminDb = getFirestore(app);
 export default app;

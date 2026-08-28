@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrderByOrderNumber, cancelOrder } from '@/lib/firestore';
+import { adminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 /**
  * Public API route for order cancellation by order number.
@@ -45,22 +46,50 @@ export async function POST(
   }
 
   try {
-    const order = await getOrderByOrderNumber(orderNumber);
-    if (!order) {
+    // Look up orderId from orderLookups collection
+    const normalized = orderNumber.toUpperCase().trim();
+    const lookupSnap = await adminDb.collection('orderLookups').doc(normalized).get();
+
+    if (!lookupSnap.exists) {
       return NextResponse.json(
         { error: 'Pesanan tidak ditemukan.' },
         { status: 404 }
       );
     }
 
-    if (order.status !== 'pending') {
+    const orderId = lookupSnap.data()?.orderId as string | undefined;
+    if (!orderId) {
+      return NextResponse.json(
+        { error: 'Pesanan tidak ditemukan.' },
+        { status: 404 }
+      );
+    }
+
+    // Get order document
+    const orderRef = adminDb.collection('orders').doc(orderId);
+    const orderSnap = await orderRef.get();
+
+    if (!orderSnap.exists) {
+      return NextResponse.json(
+        { error: 'Pesanan tidak ditemukan.' },
+        { status: 404 }
+      );
+    }
+
+    const orderData = orderSnap.data()!;
+
+    if (orderData.status !== 'pending') {
       return NextResponse.json(
         { error: 'Pesanan yang sudah diproses tidak dapat dibatalkan.' },
         { status: 400 }
       );
     }
 
-    await cancelOrder(order.id);
+    // Cancel the order
+    await orderRef.update({
+      status: 'cancelled',
+      updatedAt: FieldValue.serverTimestamp(),
+    });
 
     return NextResponse.json({ success: true, message: 'Pesanan berhasil dibatalkan.' });
   } catch (error) {

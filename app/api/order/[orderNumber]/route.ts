@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrderByOrderNumber } from '@/lib/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 
 // Rate limiting for public order lookup
 const lookupAttempts = new Map<string, { count: number; resetTime: number }>();
@@ -54,30 +54,52 @@ export async function GET(
   }
 
   try {
-    const order = await getOrderByOrderNumber(orderNumber);
+    // Look up orderId from orderLookups collection
+    const normalized = orderNumber.toUpperCase().trim();
+    const lookupSnap = await adminDb.collection('orderLookups').doc(normalized).get();
 
-    if (!order) {
+    if (!lookupSnap.exists) {
       return NextResponse.json(
         { error: 'Pesanan tidak ditemukan.' },
         { status: 404 }
       );
     }
 
+    const orderId = lookupSnap.data()?.orderId as string | undefined;
+    if (!orderId) {
+      return NextResponse.json(
+        { error: 'Pesanan tidak ditemukan.' },
+        { status: 404 }
+      );
+    }
+
+    // Get order document
+    const orderSnap = await adminDb.collection('orders').doc(orderId).get();
+
+    if (!orderSnap.exists) {
+      return NextResponse.json(
+        { error: 'Pesanan tidak ditemukan.' },
+        { status: 404 }
+      );
+    }
+
+    const data = orderSnap.data()!;
+
     // Return sanitized order data (expose only what customers need)
     return NextResponse.json({
-      orderNumber: order.orderNumber,
-      status: order.status,
-      paymentStatus: order.paymentStatus,
-      customerName: order.customerName,
-      deliveryMethod: order.deliveryMethod,
-      pickupDateTime: order.pickupDateTime,
-      items: order.items,
-      subtotal: order.subtotal,
-      deliveryFee: order.deliveryFee,
-      total: order.total,
-      notes: order.notes,
-      createdAt: order.createdAt,
-      paymentProofUrl: order.paymentProofUrl,
+      orderNumber: data.orderNumber,
+      status: data.status,
+      paymentStatus: data.paymentStatus,
+      customerName: data.customerName,
+      deliveryMethod: data.deliveryMethod,
+      pickupDateTime: data.pickupDateTime,
+      items: data.items,
+      subtotal: data.subtotal,
+      deliveryFee: data.deliveryFee,
+      total: data.total,
+      notes: data.notes,
+      createdAt: data.createdAt,
+      paymentProofUrl: data.paymentProofUrl,
       // Excluded: whatsappNumber, deliveryAddress (sensitive)
     });
   } catch (error) {
