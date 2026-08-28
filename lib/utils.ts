@@ -85,27 +85,55 @@ export function generateWhatsAppLink(phone: string, message: string): string {
 // ─── Date ─────────────────────────────────────────────────────────────────────
 
 /**
+ * Safely convert various date representations to a Date object.
+ * Handles: Date, Firestore Timestamp (.toDate()), serialized {seconds, nanoseconds},
+ * ISO strings, and epoch milliseconds.
+ */
+function toDateSafe(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  // Firestore Timestamp (has .toDate method)
+  if (typeof value === 'object' && value !== null && typeof (value as Record<string, unknown>).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate();
+  }
+  // Serialized Timestamp {seconds, nanoseconds} from JSON
+  if (typeof value === 'object' && value !== null && 'seconds' in value) {
+    const obj = value as { seconds: number; nanoseconds?: number };
+    return new Date(obj.seconds * 1000 + (obj.nanoseconds ?? 0) / 1_000_000);
+  }
+  // String or number
+  if (typeof value === 'string' || typeof value === 'number') {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+/**
  * Format a Date or Firestore Timestamp to a friendly Indonesian string.
  * e.g. "Senin, 15 Juni 2024 · 14:30"
  */
-export function formatDateId(date: Date | { toDate: () => Date }): string {
-  const d = date instanceof Date ? date : date.toDate();
+export function formatDateId(date: unknown): string {
+  const d = toDateSafe(date);
+  if (!d) return '—';
   return format(d, "EEEE, d MMMM yyyy '·' HH:mm", { locale: localeId });
 }
 
 /**
  * Format date as short: "15 Jun 2024"
  */
-export function formatDateShort(date: Date | { toDate: () => Date }): string {
-  const d = date instanceof Date ? date : date.toDate();
+export function formatDateShort(date: unknown): string {
+  const d = toDateSafe(date);
+  if (!d) return '—';
   return format(d, 'd MMM yyyy', { locale: localeId });
 }
 
 /**
  * Format time only: "14:30"
  */
-export function formatTime(date: Date | { toDate: () => Date }): string {
-  const d = date instanceof Date ? date : date.toDate();
+export function formatTime(date: unknown): string {
+  const d = toDateSafe(date);
+  if (!d) return '—';
   return format(d, 'HH:mm');
 }
 
