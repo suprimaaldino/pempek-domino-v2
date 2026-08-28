@@ -2,8 +2,6 @@
 
 import { useRef, useState } from 'react';
 import Image from 'next/image';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase';
 import { Upload, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -16,7 +14,7 @@ interface ImageUploadProps {
 
 export function ImageUpload({ currentUrl, onUploaded, storagePath, label = 'Upload Gambar' }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [progress, setProgress] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string>(currentUrl ?? '');
   const [error, setError] = useState<string | null>(null);
 
@@ -40,36 +38,30 @@ export function ImageUpload({ currentUrl, onUploaded, storagePath, label = 'Uplo
     }
 
     setError(null);
-    setProgress(10);
+    setUploading(true);
 
     try {
-      const fileName = `${Date.now()}-${sanitizedName}`;
-      const storageRef = ref(storage, `${storagePath}/${fileName}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('storagePath', storagePath);
 
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-          setProgress(pct);
-        },
-        () => {
-          setError('Gagal mengupload gambar. Coba lagi.');
-          setProgress(null);
-        },
-        async () => {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-          setProgress(100);
-          setTimeout(() => {
-            setPreview(downloadUrl);
-            onUploaded(downloadUrl);
-            setProgress(null);
-          }, 150);
-        }
-      );
-    } catch {
-      setError('Gagal mengupload gambar.');
-      setProgress(null);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal mengupload gambar.');
+      }
+
+      setPreview(data.url);
+      onUploaded(data.url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal mengupload gambar.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -78,18 +70,21 @@ export function ImageUpload({ currentUrl, onUploaded, storagePath, label = 'Uplo
       {label && <label className="text-sm font-semibold text-brown">{label}</label>}
 
       <div
-        onClick={() => inputRef.current?.click()}
+        onClick={() => !uploading && inputRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
-          const file = e.dataTransfer.files[0];
-          if (file) handleFile(file);
+          if (!uploading) {
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+          }
         }}
         className={cn(
           'relative border-2 border-dashed rounded-input overflow-hidden cursor-pointer',
           'flex flex-col items-center justify-center min-h-[120px]',
           'hover:border-primary/60 hover:bg-primary/5 transition-all',
-          preview ? 'border-brown/30' : 'border-brown/20'
+          preview ? 'border-brown/30' : 'border-brown/20',
+          uploading && 'pointer-events-none opacity-60'
         )}
       >
         {preview ? (
@@ -118,16 +113,10 @@ export function ImageUpload({ currentUrl, onUploaded, storagePath, label = 'Uplo
           </div>
         )}
 
-        {progress !== null && (
+        {uploading && (
           <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center gap-2">
             <Loader2 size={24} className="text-primary animate-spin" />
-            <p className="text-sm font-semibold text-brown">{progress}%</p>
-            <div className="w-32 h-1.5 bg-brown/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+            <p className="text-sm font-semibold text-brown">Mengupload...</p>
           </div>
         )}
       </div>
