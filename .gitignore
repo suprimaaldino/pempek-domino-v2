@@ -45,3 +45,13 @@ next-env.d.ts
 .next-dev.log
 VERCEL_ENV_SETUP.md
 .gitignore
+
+# opencode tooling (local AI coding agent config)
+opencode.jsonc
+.opencode/
+.opencodeopencode.jsonc
+
+# local tooling / scratch
+*.local
+scratch/
+*.log
