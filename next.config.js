@@ -4,8 +4,8 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   // Only register service worker in production to avoid dev navigation errors
   register: process.env.NODE_ENV === 'production',
   skipWaiting: process.env.NODE_ENV === 'production',
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
+  cacheOnFrontEndNav: false,
+  aggressiveFrontEndNavCaching: false,
   reloadOnOnline: true,
   swcMinify: true,
   workboxOptions: {
