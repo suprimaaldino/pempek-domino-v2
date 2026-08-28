@@ -57,6 +57,10 @@ export interface Order {
   orderNumber: string;
   customerName: string;
   whatsappNumber: string;
+  /** Canonical authenticated customer identity (Firebase uid). Null for guest orders. */
+  userId?: string | null;
+  /** Email of the authenticated customer (denormalized for display/legacy linking). */
+  userEmail?: string | null;
   deliveryMethod: DeliveryMethod;
   pickupDateTime?: string | null;
   deliveryAddress?: string | null;
@@ -83,6 +87,20 @@ export interface Customer {
   totalSpending: number;
   lastOrderAt: Timestamp;
   createdAt: Timestamp;
+}
+
+// ─── Authenticated customer account (users/{uid}) ────────────────────────────
+// Canonical authenticated customer identity. Keyed by Firebase `uid`. The
+// operational customer data (orders, totals) remains in the phone-keyed
+// `customers/{phone}` collection. `phone` here is stamped after the first
+// successful order so account ↔ legacy phone-customer linking can happen.
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  name: string | null;
+  phone: string | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 // ─── Payment Config ───────────────────────────────────────────────────────────

@@ -25,6 +25,7 @@ import type {
   Product,
   Order,
   Customer,
+  UserProfile,
   PaymentConfig,
   BusinessSettings,
   OrderStatus,
@@ -49,6 +50,8 @@ const OrderSchema = z.object({
   orderNumber: z.string(),
   customerName: z.string(),
   whatsappNumber: z.string(),
+  userId: z.string().nullable().optional(),
+  userEmail: z.string().nullable().optional(),
   deliveryMethod: z.enum(['pickup', 'delivery']),
   pickupDateTime: z.string().nullable().optional(),
   deliveryAddress: z.string().nullable().optional(),
@@ -347,6 +350,82 @@ export async function getOrderByOrderNumber(orderNumber: string): Promise<Order 
   if (!orderId) return null;
 
   return getOrder(orderId);
+}
+
+// ─── Users (authenticated customer accounts) ─────────────────────────────────
+// users/{uid} — canonical authenticated identity, keyed by Firebase `uid`.
+// Created on first Google sign-in. `phone` is stamped after a successful order
+// so we can link account ↔ legacy `customers/{phone}` records at read time.
+
+const UserProfileSchema = z.object({
+  uid: z.string(),
+  email: z.string().nullable(),
+  name: z.string().nullable(),
+  phone: z.string().nullable(),
+  createdAt: z.any(),
+  updatedAt: z.any(),
+});
+
+function parseUserProfile(uid: string, data: DocumentData): UserProfile | null {
+  const result = UserProfileSchema.safeParse({ uid, ...data });
+  return result.success ? result.data as UserProfile : null;
+}
+
+/**
+ * Create the authenticated customer's account record if it does not exist,
+ * otherwise return the existing one. Idempotent and client-mergeable.
+ */
+export async function getOrCreateUser(input: {
+  uid: string;
+  email?: string | null;
+  name?: string | null;
+}): Promise<UserProfile | null> {
+  const now = Timestamp.now();
+  const userRef = doc(db, 'users', input.uid);
+  const existing = await getDoc(userRef);
+
+  if (existing.exists()) {
+    return parseUserProfile(input.uid, existing.data());
+  }
+
+  await setDoc(
+    userRef,
+    {
+      email: input.email ?? null,
+      name: input.name ?? null,
+      phone: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+    { merge: true }
+  );
+
+  const after = await getDoc(userRef);
+  return after.exists() ? parseUserProfile(input.uid, after.data()) : null;
+}
+
+/**
+ * Stamp the authenticated customer's phone number onto their account after a
+ * successful order, enabling account ↔ phone-customer linking.
+ */
+export async function updateUserPhone(
+  uid: string,
+  phone: string | null
+): Promise<void> {
+  const userRef = doc(db, 'users', uid);
+  await updateDoc(userRef, {
+    phone,
+    updatedAt: Timestamp.now(),
+  });
+}
+
+/**
+ * Fetch the authenticated customer's account record.
+ */
+export async function getUser(uid: string): Promise<UserProfile | null> {
+  const snap = await getDoc(doc(db, 'users', uid));
+  if (!snap.exists()) return null;
+  return parseUserProfile(uid, snap.data());
 }
 
 // ─── Payment Config ───────────────────────────────────────────────────────────

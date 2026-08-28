@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingBag, ClipboardList, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, ClipboardList, User, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/order', label: 'Menu', icon: ShoppingBag },
   { href: '/my-orders', label: 'Pesanan', icon: ClipboardList },
+  { href: '/account', label: 'Akun', icon: User },
   { href: '/admin/login', label: 'Admin', icon: ShieldCheck },
 ];
 
@@ -23,7 +24,7 @@ export function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-100 shadow-card safe-area-pb"
       aria-label="Navigasi bawah"
     >
-      <div className="flex items-center justify-around px-4 py-2 max-w-lg mx-auto">
+      <div className="flex items-center justify-around px-2 py-2 max-w-lg mx-auto">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive =
             href === '/order'

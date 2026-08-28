@@ -1,5 +1,7 @@
 import {
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   User,
@@ -45,10 +47,61 @@ export async function logoutAdmin(): Promise<void> {
 }
 
 /**
+ * Customer sign-in with Google (optional / soft-auth).
+ *
+ * Uses the same Firebase Auth instance as the admin flow. This is deliberately
+ * non-blocking: callers should `try/catch` and continue as a guest if it fails
+ * or is cancelled. It never clears client cart/order state (that lives in the
+ * separate orderStore, which is untouched by auth).
+ *
+ * Returns the authenticated Firebase user, or null if the user cancelled.
+ */
+export async function signInWithGoogleCustomer(): Promise<User | null> {
+  const provider = new GoogleAuthProvider();
+  try {
+    const credential = await signInWithPopup(auth, provider);
+    return credential.user;
+  } catch (err: unknown) {
+    // If the user closed the popup or cancelled, treat as a graceful no-op.
+    if (
+      err &&
+      typeof err === 'object' &&
+      'code' in err &&
+      (err as { code?: unknown }).code === 'auth/popup-closed-by-user'
+    ) {
+      return null;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Sign out the current customer session.
+ * Does not touch the guest order store, so in-progress cart/order state survives.
+ */
+export async function logoutCustomer(): Promise<void> {
+  await signOut(auth);
+}
+
+/**
  * Get the current authenticated user (synchronous snapshot).
  */
 export function getCurrentUser(): User | null {
   return auth.currentUser;
+}
+
+/**
+ * Get a fresh Firebase ID token for the currently signed-in user (customer).
+ * Returns null if no user is signed in. Used to authenticate customer API routes.
+ */
+export async function getFirebaseToken(): Promise<string | null> {
+  const user = auth.currentUser;
+  if (!user) return null;
+  try {
+    return await user.getIdToken();
+  } catch {
+    return null;
+  }
 }
 
 /**

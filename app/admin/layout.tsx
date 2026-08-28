@@ -6,6 +6,7 @@ import { onAuthStateChanged } from '@/lib/auth';
 import { AdminSidebar } from '@/components/admin/Sidebar';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import type { CustomerProfile } from '@/store/authStore';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -16,9 +17,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     setMounted(true);
     const unsubscribe = onAuthStateChanged((firebaseUser) => {
-      setUser(firebaseUser);
+      const profile: CustomerProfile | null = firebaseUser
+        ? {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email ?? null,
+            name: firebaseUser.displayName ?? null,
+            phone: null,
+          }
+        : null;
+      setUser(profile);
       setLoading(false);
-      
+
       if (!firebaseUser && pathname !== '/admin/login') {
         router.replace('/admin/login');
       }

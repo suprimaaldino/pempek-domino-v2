@@ -128,6 +128,23 @@ service cloud.firestore {
       allow read, delete: if isAuthenticated();
     }
 
+    // ─── Users (authenticated customer accounts) ────────────────────────────
+    // users/{uid} — canonical authenticated identity. Only the owner (matching
+    // Firebase uid) may read or update their own record. Guest order creation
+    // does NOT touch this collection, so the guest flow is unaffected.
+
+    function isOwnerOfUser(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read: if isOwnerOfUser(uid);
+      allow create, update: if
+        isOwnerOfUser(uid) &&
+        request.resource.data.keys().hasAll(['email', 'name', 'phone', 'createdAt', 'updatedAt']);
+      allow delete: if false;
+    }
+
     // ─── Payment Config ───────────────────────────────────────────────────
 
     match /paymentConfig/{configId} {

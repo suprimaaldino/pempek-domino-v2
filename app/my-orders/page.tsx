@@ -16,6 +16,9 @@ import {
   XCircle,
 } from 'lucide-react';
 import { getBusinessSettings } from '@/lib/firestore';
+import { getFirebaseToken } from '@/lib/auth';
+import { useCustomerAuth } from '@/hooks/useCustomerAuth';
+import { useAuthStore } from '@/store/authStore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
@@ -246,6 +249,42 @@ export default function MyOrdersPage() {
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
   const [savedOrders, setSavedOrders] = useState<SavedOrder[]>([]);
 
+  // Account-scoped order history (only when authenticated)
+  useCustomerAuth();
+  const isAuthed = useAuthStore((s) => s.isAuthenticated);
+  const [myOrders, setMyOrders] = useState<Order[]>([]);
+  const [myOrdersLoading, setMyOrdersLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!isAuthed) {
+      setMyOrders([]);
+      return;
+    }
+    setMyOrdersLoading(true);
+    (async () => {
+      try {
+        const token = await getFirebaseToken();
+        if (!token) return;
+        const response = await fetch('/api/my-orders', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (active) setMyOrders((data.orders ?? []) as Order[]);
+        }
+      } catch {
+        // Non-fatal — guest flow still works if this fails.
+      } finally {
+        if (active) setMyOrdersLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthed]);
+
   // Load saved orders from localStorage + auto-load most recent
   useEffect(() => {
     getBusinessSettings().then(setSettings).catch(console.error);
@@ -329,6 +368,33 @@ export default function MyOrdersPage() {
             Hanya pemesan yang tahu nomor pesanannya yang bisa melihat detail pesanan ini.
           </p>
         </div>
+
+        {/* Account-scoped order history (authenticated users only) */}
+        {isAuthed && (
+          <div className="mb-6">
+            <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-2">
+              Riwayat Pesanan Saya
+            </p>
+            {myOrdersLoading ? (
+              <div className="space-y-3">
+                <SkeletonCard />
+                <SkeletonCard />
+              </div>
+            ) : myOrders.length > 0 ? (
+              <div className="space-y-3">
+                {myOrders.map((o) => (
+                  <ErrorBoundary key={o.id}>
+                    <OrderDetailCard order={o} settings={settings} onCancelled={handleOrderCancelled} />
+                  </ErrorBoundary>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-neutral-400 text-sm bg-white rounded-card border border-neutral-100 shadow-card">
+                Belum ada pesanan pada akun ini.
+              </div>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSearch} className="mb-6 bg-white rounded-card shadow-card border border-neutral-100 p-4 space-y-3">
           <Input

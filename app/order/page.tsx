@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Truck, MapPin, Smartphone, Building2, QrCode, ClipboardList, Upload, ChevronDown } from 'lucide-react';
+import { Truck, MapPin, Smartphone, Building2, QrCode, ClipboardList, Upload, ChevronDown, LogIn, LogOut } from 'lucide-react';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import { Input, Textarea } from '@/components/ui/Input';
 import { RadioCard } from '@/components/ui/RadioCard';
@@ -19,7 +19,10 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useOrderStore } from '@/store/orderStore';
 import { useProducts } from '@/hooks/useProducts';
-import { createOrder, generateOrderNumber, upsertCustomer, getPaymentConfig, getBusinessSettings } from '@/lib/firestore';
+import { createOrder, generateOrderNumber, upsertCustomer, getPaymentConfig, getBusinessSettings, getOrCreateUser, updateUserPhone } from '@/lib/firestore';
+import { getCurrentUser, signInWithGoogleCustomer, logoutCustomer } from '@/lib/auth';
+import { useCustomerAuth } from '@/hooks/useCustomerAuth';
+import { useAuthStore } from '@/store/authStore';
 import { normalizePhone, CATEGORY_LABELS } from '@/lib/utils';
 import { sanitizeName, validateOrderData } from '@/lib/sanitize';
 import type { PaymentConfig, PaymentMethod, DeliveryMethod, BusinessSettings, ProductCategory } from '@/types';
@@ -59,6 +62,13 @@ export default function OrderPage() {
   const { success: toastSuccess, error: toastError } = useToast();
   const { items, subtotal, setCustomerInfo, setDelivery, setPaymentMethod, clearCart } = useOrderStore();
   const { grouped, loading: productsLoading } = useProducts();
+
+  // Optional customer auth (soft-auth): never blocks ordering, never clears
+  // the cart/order state (which lives in the separate orderStore).
+  useCustomerAuth();
+  const isAuthed = useAuthStore((s) => s.isAuthenticated);
+  const authUser = useAuthStore((s) => s.user);
+  const [authBusy, setAuthBusy] = useState(false);
   const productCategoryMap = useMemo(() => {
     const map = new Map<string, ProductCategory>();
     for (const prods of Object.values(grouped)) {
@@ -134,6 +144,24 @@ export default function OrderPage() {
     setPaymentMethod(paymentMethodVal as PaymentMethod);
   }, [paymentMethodVal, setPaymentMethod]);
 
+  // Prefill customer info from the authenticated account (Phase 6).
+  // Soft-auth: only prefills if the field is still empty, so it never overwrites
+  // manual entry, and never touches the cart (orderStore is separate from auth).
+  useEffect(() => {
+    if (!isAuthed || !authUser) return;
+    const currentName = watch('customerName') || '';
+    const currentPhone = watch('whatsappNumber') || '';
+    if (!currentName && authUser.name) {
+      setValue('customerName', authUser.name);
+      setCustomerInfo({ customerName: authUser.name });
+    }
+    if (!currentPhone && authUser.phone) {
+      setValue('whatsappNumber', authUser.phone);
+      setCustomerInfo({ whatsappNumber: authUser.phone });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthed, authUser]);
+
   const onSubmit = async (data: FormValues) => {
     if (items.length === 0) {
       toastError('Pilih minimal 1 menu terlebih dahulu.');
@@ -175,10 +203,16 @@ export default function OrderPage() {
         category: productCategoryMap.get(i.productId),
       }));
 
+      // Stamp the authenticated customer identity (Firebase uid) onto the order.
+      // Guest orders (no logged-in user) leave userId/userEmail unset and behave
+      // exactly as before — this is an additive, optional ownership reference.
+      const currentUser = getCurrentUser();
+
       const orderId = await createOrder({
         orderNumber,
         customerName: sanitizedData.customerName,
         whatsappNumber: sanitizedData.whatsappNumber,
+        ...(currentUser ? { userId: currentUser.uid, userEmail: currentUser.email ?? null } : {}),
         deliveryMethod: data.deliveryMethod,
         pickupDateTime: data.deliveryMethod === 'pickup' ? data.pickupDateTime : null,
         deliveryAddress: data.deliveryMethod === 'delivery' ? sanitizedData.deliveryAddress : null,
@@ -197,6 +231,17 @@ export default function OrderPage() {
         await upsertCustomer(sanitizedData.customerName, sanitizedData.whatsappNumber, sanitizedData.total);
       } catch (custErr) {
         console.error('Failed to upsert customer details:', custErr);
+      }
+
+      // Stamp the authenticated user's phone onto their account so future
+      // order-history lookups can link account ↔ phone-keyed customer records.
+      if (currentUser) {
+        try {
+          await getOrCreateUser({ uid: currentUser.uid, email: currentUser.email, name: currentUser.displayName });
+          await updateUserPhone(currentUser.uid, sanitizedData.whatsappNumber);
+        } catch (userErr) {
+          console.error('Failed to stamp user phone:', userErr);
+        }
       }
 
       clearCart();
@@ -312,6 +357,52 @@ export default function OrderPage() {
               <h2 id="section-pemesan" className="font-bold text-neutral-900 text-base">Data Pemesan</h2>
             </div>
             <div className="bg-white rounded-card shadow-card border border-neutral-100 p-4 space-y-4">
+              {/* Optional (soft-auth) customer login — never blocks ordering */}
+              {isAuthed && authUser ? (
+                <div className="flex items-center justify-between gap-3 rounded-input bg-primary/5 border border-primary/10 px-3 py-2">
+                  <p className="text-xs text-neutral-600 truncate">
+                    <span className="font-semibold text-primary">Masuk sebagai {authUser.name || authUser.email || 'pengguna'}</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setAuthBusy(true);
+                      try {
+                        await logoutCustomer();
+                      } catch {
+                        toastError('Gagal keluar.');
+                      } finally {
+                        setAuthBusy(false);
+                      }
+                    }}
+                    disabled={authBusy}
+                    className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-neutral-500 hover:text-error transition-colors"
+                    aria-label="Keluar"
+                  >
+                    <LogOut size={13} />
+                    Keluar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setAuthBusy(true);
+                    try {
+                      await signInWithGoogleCustomer();
+                    } catch {
+                      toastError('Gagal masuk. Lanjut sebagai tamu.');
+                    } finally {
+                      setAuthBusy(false);
+                    }
+                  }}
+                  disabled={authBusy}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-input border border-neutral-200 bg-white px-3 py-2.5 text-sm font-semibold text-neutral-600 hover:border-primary/30 hover:bg-primary/5 transition-colors"
+                >
+                  <LogIn size={15} className="text-primary" />
+                  {authBusy ? 'Memproses...' : 'Masuk dengan Google (opsional)'}
+                </button>
+              )}
               <Input
                 label="Nama Lengkap"
                 placeholder="Contoh: Budi Santoso"

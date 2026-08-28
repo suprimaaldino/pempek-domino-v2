@@ -33,3 +33,35 @@ export async function verifyAdminToken(token: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Verify a Firebase ID token and return the authenticated user's uid, or null
+ * if invalid. Unlike verifyAdminToken, this does NOT check the admin email —
+ * it authenticates any valid Firebase user (used for customer-facing routes).
+ * Edge-safe (fetch only), shared with customer API routes.
+ */
+export async function getUidFromToken(token: string): Promise<string | null> {
+  try {
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+    if (!apiKey || !token) return null;
+
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: token }),
+      }
+    );
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data.users || data.users.length === 0) return null;
+
+    const user = data.users[0];
+    return typeof user.localId === 'string' ? user.localId : null;
+  } catch {
+    return null;
+  }
+}
