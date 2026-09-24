@@ -23,12 +23,12 @@ jest.mock('@/store/orderStore', () => ({
   })),
 }));
 
-// Mock next/image
+// Mock next/image — strip next-only props (fill is boolean, invalid on <img>)
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props: any) => {
+  default: ({ fill, priority, ...props }: any) => {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} src={props.src} alt={props.alt} />;
+    return <img {...props} />;
   },
 }));
 

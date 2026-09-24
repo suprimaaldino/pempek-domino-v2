@@ -41,9 +41,11 @@ Salin `.env.local.example` ke `.env.local` dan isi dengan kredensial Firebase An
 ```bash
 cp .env.local.example .env.local
 ```
-**PENTING**: Generate hash password admin menggunakan `bcryptjs` dan simpan di `ADMIN_PASSWORD_HASH`:
+**PENTING**: Generate hash password admin menggunakan `bcryptjs` dan simpan di `ADMIN_PASSWORD_HASH`. Setiap `$` wajib di-escape jadi `\$` (Next.js me-expand `$…` sebagai variabel env, sehingga hash jadi kosong). Jika password mengandung `#`, tulis `ADMIN_PASSWORD` dalam tanda kutip:
 ```bash
-node -e "const b=require('bcryptjs');console.log(b.hashSync('password_anda',12))"
+node -e "const b=require('bcryptjs');console.log(b.hashSync('password_anda',12).replace(/\\\$/g,'\\\\\$'))"
+# contoh hasil: \$2b\$12\$...
+# ADMIN_PASSWORD="password_anda"
 ```
 
 ### 4. Menjalankan Aplikasi

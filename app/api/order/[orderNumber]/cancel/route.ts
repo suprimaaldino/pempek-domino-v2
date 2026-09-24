@@ -1,27 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 /**
  * Public API route for order cancellation by order number.
  * Only allows cancellation of orders with 'pending' status.
  * Rate limited to prevent abuse.
  */
-const cancelAttempts = new Map<string, { count: number; resetTime: number }>();
 const MAX_CANCEL = 5;
 const WINDOW_MS = 60 * 1000;
-
-function checkCancelRateLimit(key: string): boolean {
-  const now = Date.now();
-  const record = cancelAttempts.get(key);
-  if (!record || now > record.resetTime) {
-    cancelAttempts.set(key, { count: 1, resetTime: now + WINDOW_MS });
-    return true;
-  }
-  if (record.count >= MAX_CANCEL) return false;
-  record.count++;
-  return true;
-}
+const RATE_BUCKET = 'order-cancel';
 
 export async function POST(
   req: NextRequest,
@@ -30,7 +19,7 @@ export async function POST(
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0] ||
              req.headers.get('x-real-ip') || 'unknown';
 
-  if (!checkCancelRateLimit(ip)) {
+  if (!checkRateLimit(RATE_BUCKET, ip, MAX_CANCEL, WINDOW_MS).allowed) {
     return NextResponse.json(
       { error: 'Terlalu banyak permintaan. Coba lagi sebentar.' },
       { status: 429, headers: { 'Retry-After': '60' } }
@@ -94,7 +83,10 @@ export async function POST(
     return NextResponse.json({ success: true, message: 'Pesanan berhasil dibatalkan.' });
   } catch (error) {
     console.error('[ORDER_CANCEL] Error:', error);
-    const message = error instanceof Error ? error.message : 'Gagal membatalkan pesanan.';
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Do not leak internal error details to the client
+    return NextResponse.json(
+      { error: 'Gagal membatalkan pesanan. Coba lagi.' },
+      { status: 500 }
+    );
   }
 }

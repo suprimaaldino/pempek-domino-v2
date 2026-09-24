@@ -8,6 +8,13 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Admin only: custom claim `admin: true` set by /api/admin/login via Admin SDK.
+    // Do NOT use plain isAuthenticated() for privileged writes — any Google
+    // customer session is authenticated but must not mutate admin data.
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
     function isValidString(value, minLength, maxLength) {
       return value is string &&
              value.size() >= minLength &&
@@ -16,23 +23,12 @@ service cloud.firestore {
 
     function isValidPhone(number) {
       return number is string &&
-             number.matches(/^628[0-9]{8,12}$/);
+             number.matches('^628[0-9]{8,12}$');
     }
 
-    function isValidOrderItem(item) {
-      return item is map &&
-             isValidString(item.productId, 1, 100) &&
-             isValidString(item.productName, 1, 200) &&
-             item.price is number &&
-             item.price >= 0 &&
-             item.price <= 10000000 &&
-             item.quantity is number &&
-             item.quantity >= 1 &&
-             item.quantity <= 1000 &&
-             item.subtotal is number &&
-             item.subtotal >= 0;
-    }
-
+    // NOTE: rules.List has no .all(predicate). Per-item field validation is
+    // enforced server-side in POST /api/order (Admin SDK bypasses rules).
+    // Here we only constrain list shape/size (guest client create path).
     function isValidOrder(data) {
       return data.keys().hasAll([
         'customerName', 'whatsappNumber', 'items',
@@ -43,7 +39,6 @@ service cloud.firestore {
         data.items is list &&
         data.items.size() > 0 &&
         data.items.size() <= 100 &&
-        data.items.all(isValidOrderItem) &&
         data.subtotal is number &&
         data.subtotal >= 0 &&
         data.total is number &&
@@ -66,33 +61,40 @@ service cloud.firestore {
 
     match /products/{productId} {
       allow read: if true;
-      allow create: if isAuthenticated() && isValidProduct(request.resource.data);
-      allow update: if isAuthenticated() &&
+      allow create: if isAdmin() && isValidProduct(request.resource.data);
+      allow update: if isAdmin() &&
         !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(['createdAt']); // Prevent createdAt modification
-      allow delete: if isAuthenticated();
+      allow delete: if isAdmin();
     }
 
     // ─── Orders ───────────────────────────────────────────────────────────
+    // Create: still validated shape (guest checkout / server Admin SDK bypasses rules).
+    // Read: admin, or the authenticated owner of the order.
+    // Mutations: admin only.
 
     match /orders/{orderId} {
       allow create: if isValidOrder(request.resource.data);
-      allow get: if isAuthenticated(); // Admin only — customers use /api/order/[orderNumber]
-      allow list: if isAuthenticated();
-      allow update: if isAuthenticated() &&
+      allow get: if isAdmin() ||
+        (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow list: if isAdmin() ||
+        (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin() &&
         !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(['createdAt', 'orderNumber', 'items']); // items frozen after creation
-      allow delete: if isAuthenticated();
+      allow delete: if isAdmin();
     }
 
     // ─── Order Lookups ────────────────────────────────────────────────────
+    // get: public so guest flows that resolve orderNumber → orderId still work
+    // when not using Admin SDK. Writes are admin-only.
 
     match /orderLookups/{orderNumber} {
       allow create: if
         request.resource.data.keys().hasAll(['orderId', 'createdAt']) &&
         isValidString(request.resource.data.orderId, 1, 200);
       allow get: if true;
-      allow list, update, delete: if isAuthenticated();
+      allow list, update, delete: if isAdmin();
     }
 
     // ─── Counters ─────────────────────────────────────────────────────────
@@ -121,11 +123,10 @@ service cloud.firestore {
       allow create: if
         request.resource.data.keys().hasAll(['name', 'whatsappNumber']) &&
         request.resource.data.whatsappNumber == customerId;
-      // Admin can update any; unauthenticated only their own
-      allow update: if
-        request.auth != null ||
+      // Admin any; otherwise only the owner of that phone record (guest upsert)
+      allow update: if isAdmin() ||
         resource.data.whatsappNumber == customerId;
-      allow read, delete: if isAuthenticated();
+      allow read, delete: if isAdmin();
     }
 
     // ─── Users (authenticated customer accounts) ────────────────────────────
@@ -138,7 +139,7 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if isOwnerOfUser(uid);
+      allow read: if isOwnerOfUser(uid) || isAdmin();
       allow create, update: if
         isOwnerOfUser(uid) &&
         request.resource.data.keys().hasAll(['email', 'name', 'phone', 'createdAt', 'updatedAt']);
@@ -149,14 +150,14 @@ service cloud.firestore {
 
     match /paymentConfig/{configId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     // ─── Settings ─────────────────────────────────────────────────────────
 
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }

@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Truck, MapPin, Smartphone, Building2, QrCode, ClipboardList, Upload, ChevronDown, LogIn, LogOut } from 'lucide-react';
-import { ImageUpload } from '@/components/admin/ImageUpload';
+import { Truck, MapPin, Smartphone, Building2, QrCode, ClipboardList, ChevronDown, LogIn, LogOut } from 'lucide-react';
+// Payment proof upload via Firebase Storage — disabled (via WhatsApp instead).
+// Requires Blaze Storage; re-enable when available.
+// import { ImageUpload } from '@/components/admin/ImageUpload';
 import { Input, Textarea } from '@/components/ui/Input';
 import { RadioCard } from '@/components/ui/RadioCard';
 import { ProductCard } from '@/components/order/ProductCard';
@@ -19,19 +21,24 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useOrderStore } from '@/store/orderStore';
 import { useProducts } from '@/hooks/useProducts';
-import { createOrder, generateOrderNumber, upsertCustomer, getPaymentConfig, getBusinessSettings, getOrCreateUser, updateUserPhone } from '@/lib/firestore';
-import { getCurrentUser, signInWithGoogleCustomer, logoutCustomer } from '@/lib/auth';
+import { getPaymentConfig, getBusinessSettings, getOrCreateUser, updateUserPhone } from '@/lib/firestore';
+import { getCurrentUser, getFirebaseToken, signInWithGoogleCustomer, logoutCustomer } from '@/lib/auth';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { useAuthStore } from '@/store/authStore';
 import { normalizePhone, CATEGORY_LABELS } from '@/lib/utils';
-import { sanitizeName, validateOrderData } from '@/lib/sanitize';
-import type { PaymentConfig, PaymentMethod, DeliveryMethod, BusinessSettings, ProductCategory } from '@/types';
+import { validateOrderData } from '@/lib/sanitize';
+import type { PaymentConfig, PaymentMethod, DeliveryMethod, BusinessSettings } from '@/types';
 
 const schema = z.object({
   customerName: z.string().min(2, 'Nama minimal 2 karakter'),
   whatsappNumber: z
     .string()
-    .regex(/^628[0-9]{8,12}$/, 'Format: 628xxxxxxxxxx (10-14 digit setelah 628)'),
+    .min(1, 'Nomor WhatsApp wajib diisi')
+    // Accept local (08xx), intl (628xx / +628xx); normalizePhone → 628 for storage
+    .refine(
+      (v) => /^628[0-9]{8,12}$/.test(normalizePhone(v)),
+      'Nomor WhatsApp tidak valid (contoh: 081234567890)'
+    ),
   notes: z.string(),
   deliveryMethod: z.enum(['pickup', 'delivery']),
   pickupDateTime: z.string(),
@@ -69,19 +76,10 @@ export default function OrderPage() {
   const isAuthed = useAuthStore((s) => s.isAuthenticated);
   const authUser = useAuthStore((s) => s.user);
   const [authBusy, setAuthBusy] = useState(false);
-  const productCategoryMap = useMemo(() => {
-    const map = new Map<string, ProductCategory>();
-    for (const prods of Object.values(grouped)) {
-      for (const p of prods) {
-        map.set(p.id, p.category);
-      }
-    }
-    return map;
-  }, [grouped]);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [paymentProofUrl, setPaymentProofUrl] = useState<string>('');
+  const [paymentProofUrl] = useState<string>('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     kecil: true,
     paket: false,
@@ -131,6 +129,7 @@ export default function OrderPage() {
     }).catch(() => {
       toastError('Gagal memuat informasi toko.');
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setValue]);
 
   useEffect(() => {
@@ -171,19 +170,16 @@ export default function OrderPage() {
     setSubmitting(true);
     try {
       const phone = normalizePhone(data.whatsappNumber);
-      const orderNumber = await generateOrderNumber();
       const fee = data.deliveryMethod === 'delivery' ? (data.deliveryFee ?? 0) : 0;
-      const sub = subtotal;
-      const total = sub + fee;
 
-      // Validate and sanitize all inputs
+      // Client-side UX validation only — authoritative money math is server-side.
       const validation = validateOrderData({
         customerName: data.customerName,
         whatsappNumber: phone,
         deliveryAddress: data.deliveryAddress || undefined,
         notes: data.notes,
         deliveryFee: fee,
-        total,
+        total: subtotal + fee,
       });
 
       if (!validation.isValid) {
@@ -194,47 +190,44 @@ export default function OrderPage() {
 
       const { sanitizedData } = validation;
 
-      const orderItems = items.map((i) => ({
-        productId: i.productId,
-        productName: sanitizeName(i.productName),
-        price: i.price,
-        quantity: i.quantity,
-        subtotal: i.price * i.quantity,
-        category: productCategoryMap.get(i.productId),
-      }));
-
-      // Stamp the authenticated customer identity (Firebase uid) onto the order.
-      // Guest orders (no logged-in user) leave userId/userEmail unset and behave
-      // exactly as before — this is an additive, optional ownership reference.
+      // Optional identity for ownership stamping (server re-validates Bearer token)
       const currentUser = getCurrentUser();
+      const idToken = currentUser ? await getFirebaseToken() : null;
 
-      const orderId = await createOrder({
-        orderNumber,
-        customerName: sanitizedData.customerName,
-        whatsappNumber: sanitizedData.whatsappNumber,
-        ...(currentUser ? { userId: currentUser.uid, userEmail: currentUser.email ?? null } : {}),
-        deliveryMethod: data.deliveryMethod,
-        pickupDateTime: data.deliveryMethod === 'pickup' ? data.pickupDateTime : null,
-        deliveryAddress: data.deliveryMethod === 'delivery' ? sanitizedData.deliveryAddress : null,
-        deliveryFee: sanitizedData.deliveryFee,
-        items: orderItems,
-        subtotal: sub,
-        total: sanitizedData.total,
-        status: 'pending',
-        paymentMethod: data.paymentMethod as PaymentMethod,
-        paymentStatus: 'unpaid',
-        ...(paymentProofUrl ? { paymentProofUrl } : {}),
-        notes: sanitizedData.notes,
+      // Server-authoritative create: prices/totals recomputed from catalog.
+      const res = await fetch('/api/order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
+        body: JSON.stringify({
+          customerName: sanitizedData.customerName,
+          whatsappNumber: sanitizedData.whatsappNumber,
+          items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+          deliveryMethod: data.deliveryMethod,
+          pickupDateTime: data.deliveryMethod === 'pickup' ? data.pickupDateTime : null,
+          deliveryAddress: data.deliveryMethod === 'delivery' ? sanitizedData.deliveryAddress : null,
+          deliveryFee: sanitizedData.deliveryFee,
+          paymentMethod: data.paymentMethod as PaymentMethod,
+          paymentProofUrl: paymentProofUrl || null,
+          notes: sanitizedData.notes,
+        }),
       });
 
-      try {
-        await upsertCustomer(sanitizedData.customerName, sanitizedData.whatsappNumber, sanitizedData.total);
-      } catch (custErr) {
-        console.error('Failed to upsert customer details:', custErr);
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || 'Gagal membuat pesanan.');
       }
 
-      // Stamp the authenticated user's phone onto their account so future
-      // order-history lookups can link account ↔ phone-keyed customer records.
+      const { orderId, orderNumber } = result as {
+        orderId: string;
+        orderNumber: string;
+        total: number;
+      };
+
+      // Legacy client-side customer aggregate is handled server-side.
+      // Stamp phone on authenticated profile (best-effort; server already stamps).
       if (currentUser) {
         try {
           await getOrCreateUser({ uid: currentUser.uid, email: currentUser.email, name: currentUser.displayName });
@@ -256,10 +249,12 @@ export default function OrderPage() {
       } catch { /* localStorage may be unavailable */ }
 
       toastSuccess('Pesanan berhasil dibuat!');
-      router.push(`/confirmation/${orderId}`);
+      // Navigate by orderNumber so confirmation can use the public lookup API
+      // (guests cannot Firestore-get orders/{id}).
+      router.push(`/confirmation/${encodeURIComponent(orderNumber)}`);
     } catch (err) {
       console.error(err);
-      toastError('Gagal membuat pesanan. Coba lagi.');
+      toastError(err instanceof Error ? err.message : 'Gagal membuat pesanan. Coba lagi.');
     } finally {
       setSubmitting(false);
     }
@@ -279,7 +274,7 @@ export default function OrderPage() {
       <div className="bg-white border-b border-neutral-100 px-4 pt-safe-top pb-4">
         <div className="max-w-lg mx-auto pt-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg overflow-visible shrink-0 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
               <Image src="/icons/icon-192.png" alt="Logo Pempek Domino" width={40} height={40} className="w-10 h-10 object-contain" priority />
             </div>
             <div>
@@ -417,7 +412,7 @@ export default function OrderPage() {
                 type="tel"
                 inputMode="tel"
                 error={errors.whatsappNumber?.message}
-                helperText="Format: 628xxxxxxxxxx (10-14 digit)"
+                helperText="Contoh: 081234567890 atau 6281234567890"
                 {...register('whatsappNumber', {
                   onChange: (e) => setCustomerInfo({ whatsappNumber: e.target.value }),
                 })}
@@ -539,7 +534,7 @@ export default function OrderPage() {
             </div>
             <PaymentPreview method={paymentMethodVal} config={paymentConfig} />
 
-            {/* Upload Bukti Pembayaran */}
+            {/* Upload Bukti Pembayaran — DISABLED: kirim via WhatsApp (Storage butuh Blaze)
             <div className="mt-3 bg-white rounded-card shadow-card border border-neutral-100 p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Upload size={14} className="text-primary" />
@@ -554,6 +549,10 @@ export default function OrderPage() {
               />
               <p className="text-xs text-neutral-400 mt-2">Upload sekarang atau kirim via WhatsApp setelah pesan dibuat.</p>
             </div>
+            */}
+            <p className="mt-3 text-xs text-neutral-400">
+              Bukti bayar dikirim via WhatsApp setelah pesanan dibuat.
+            </p>
           </section>
 
         </div>

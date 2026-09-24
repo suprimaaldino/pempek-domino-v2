@@ -53,6 +53,7 @@ export default function OrderDetailPage() {
         setOrder(data);
       } catch (err) {
         console.error(err);
+        toastError('Gagal memuat detail pesanan. Coba lagi.');
       } finally {
         setLoading(false);
       }

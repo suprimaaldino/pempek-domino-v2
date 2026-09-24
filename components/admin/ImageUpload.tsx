@@ -31,11 +31,8 @@ export function ImageUpload({ currentUrl, onUploaded, storagePath, label = 'Uplo
       return;
     }
 
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '');
-    if (sanitizedName !== file.name) {
-      setError('Nama file mengandung karakter tidak valid.');
-      return;
-    }
+    // Name sanitization is server-side (/api/upload) — screenshots often
+    // contain spaces; do not reject here.
 
     setError(null);
     setUploading(true);

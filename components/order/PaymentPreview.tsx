@@ -118,6 +118,7 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
       console.error('Failed to copy:', err);
       toastError('Gagal menyalin, silakan coba lagi');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!config) return null;

@@ -24,14 +24,12 @@ const sizeClasses = {
 export function Modal({ isOpen, onClose, title, children, size = 'md', className }: ModalProps) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [closing, setClosing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Mount animation
   useEffect(() => {
     if (isOpen) {
       setMounted(true);
-      setClosing(false);
       // Trigger entrance on next frame
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -43,11 +41,9 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', className
 
   // Close with exit animation
   const handleClose = () => {
-    setClosing(true);
     setVisible(false);
     setTimeout(() => {
       setMounted(false);
-      setClosing(false);
       onClose();
     }, 150);
   };
@@ -62,14 +58,42 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', className
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
-  // Escape key
+  // Escape key + focus first focusable + focus trap
   useEffect(() => {
     if (!isOpen) return;
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') handleClose();
     };
     document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+
+    const panel = panelRef.current;
+    const focusable = panel?.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    focusable?.[0]?.focus();
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !panel) return;
+      const els = panel.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (els.length === 0) return;
+      const first = els[0];
+      const last = els[els.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleTab);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleTab);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, onClose]);
 
   if (!mounted) return null;

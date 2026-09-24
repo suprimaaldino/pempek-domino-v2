@@ -1,3 +1,7 @@
+
+> pempek-domino-v2@0.1.0 dev
+> next dev
+
   ▲ Next.js 14.2.35
   - Local:        http://localhost:3000
   - Environments: .env.local
@@ -13,4 +17,122 @@
  ○ (pwa)   URL: /sw.js
  ○ (pwa)   Scope: /
  ○ (pwa) Building in development mode, caching and precaching are disabled for the most part. This means that offline support is disabled, but you can continue developing other functions in service worker.
- ✓ Ready in 29.3s
+ ✓ Ready in 16.1s
+ ○ Compiling / ...
+ ✓ Compiled / in 10.3s (1778 modules)
+ HEAD / 200 in 2088ms
+ ✓ Compiled in 1437ms (856 modules)
+ HEAD / 307 in 102ms
+ ○ Compiling /order ...
+ ✓ Compiled /order in 3.5s (2197 modules)
+ HEAD / 307 in 107ms
+ HEAD /order 200 in 80ms
+ ✓ Compiled /middleware in 297ms (116 modules)
+ ○ Compiling /api/admin/login ...
+ ⚠ ./node_modules/@protobufjs/inquire/index.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@protobufjs/inquire/index.js
+./node_modules/protobufjs/src/util/minimal.js
+./node_modules/protobufjs/src/index-minimal.js
+./node_modules/protobufjs/src/index-light.js
+./node_modules/protobufjs/src/index.js
+./node_modules/protobufjs/index.js
+./node_modules/@grpc/proto-loader/build/src/index.js
+./node_modules/@firebase/firestore/dist/index.node.mjs
+./node_modules/firebase/firestore/dist/index.mjs
+./lib/firebase.ts
+./app/api/admin/login/route.ts
+ POST /api/admin/login 200 in 12388ms
+ POST /api/admin/login 200 in 1924ms
+ ⚠ ./node_modules/@protobufjs/inquire/index.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@protobufjs/inquire/index.js
+./node_modules/protobufjs/src/util/minimal.js
+./node_modules/protobufjs/src/index-minimal.js
+./node_modules/protobufjs/src/index-light.js
+./node_modules/protobufjs/src/index.js
+./node_modules/protobufjs/index.js
+./node_modules/@grpc/proto-loader/build/src/index.js
+./node_modules/@firebase/firestore/dist/index.node.mjs
+./node_modules/firebase/firestore/dist/index.mjs
+./lib/firebase.ts
+./app/api/admin/login/route.ts
+ ⚠ ./node_modules/@protobufjs/inquire/index.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@protobufjs/inquire/index.js
+./node_modules/protobufjs/src/util/minimal.js
+./node_modules/protobufjs/src/index-minimal.js
+./node_modules/protobufjs/src/index-light.js
+./node_modules/protobufjs/src/index.js
+./node_modules/protobufjs/index.js
+./node_modules/@grpc/proto-loader/build/src/index.js
+./node_modules/@firebase/firestore/dist/index.node.mjs
+./node_modules/firebase/firestore/dist/index.mjs
+./lib/firebase.ts
+./app/api/admin/login/route.ts
+ GET /admin/dashboard 200 in 11216ms
+ ⚠ ./node_modules/@protobufjs/inquire/index.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@protobufjs/inquire/index.js
+./node_modules/protobufjs/src/util/minimal.js
+./node_modules/protobufjs/src/index-minimal.js
+./node_modules/protobufjs/src/index-light.js
+./node_modules/protobufjs/src/index.js
+./node_modules/protobufjs/index.js
+./node_modules/@grpc/proto-loader/build/src/index.js
+./node_modules/@firebase/firestore/dist/index.node.mjs
+./node_modules/firebase/firestore/dist/index.mjs
+./lib/firebase.ts
+./app/api/admin/login/route.ts
+ ⚠ ./node_modules/@protobufjs/inquire/index.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@protobufjs/inquire/index.js
+./node_modules/protobufjs/src/util/minimal.js
+./node_modules/protobufjs/src/index-minimal.js
+./node_modules/protobufjs/src/index-light.js
+./node_modules/protobufjs/src/index.js
+./node_modules/protobufjs/index.js
+./node_modules/@grpc/proto-loader/build/src/index.js
+./node_modules/@firebase/firestore/dist/index.node.mjs
+./node_modules/firebase/firestore/dist/index.mjs
+./lib/firebase.ts
+./app/api/admin/login/route.ts
+ GET /admin/login 200 in 4774ms
+ GET /admin/login 200 in 206ms
+ ⚠ ./node_modules/@protobufjs/inquire/index.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@protobufjs/inquire/index.js
+./node_modules/protobufjs/src/util/minimal.js
+./node_modules/protobufjs/src/index-minimal.js
+./node_modules/protobufjs/src/index-light.js
+./node_modules/protobufjs/src/index.js
+./node_modules/protobufjs/index.js
+./node_modules/@grpc/proto-loader/build/src/index.js
+./node_modules/@firebase/firestore/dist/index.node.mjs
+./node_modules/firebase/firestore/dist/index.mjs
+./lib/firebase.ts
+./app/api/admin/login/route.ts
+ ✓ Compiled /_not-found in 4.3s (2700 modules)
+ GET /_next/static/css/app/layout.css?v=1790147815522 404 in 4643ms
+ GET /_next/static/chunks/main-app.js?v=1790147815522 404 in 4575ms
+ GET /_next/static/chunks/webpack.js?v=1790147815522 404 in 4580ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 4572ms
+ GET /_next/static/chunks/app/admin/login/page.js 404 in 4576ms
+ GET /_next/static/chunks/app/admin/layout.js 404 in 4572ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 50ms
+ GET /_next/static/css/app/layout.css?v=1790147815522 404 in 57ms
+ GET /_next/static/chunks/app/error.js 404 in 52ms
+ ✓ Compiled in 1958ms (1518 modules)
+ ✓ Compiled in 1211ms (1518 modules)

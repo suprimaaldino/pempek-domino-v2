@@ -56,7 +56,7 @@ export default function AdminLoginPage() {
     <main className="min-h-screen bg-cream flex items-center justify-center p-4 animate-page-in">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8 flex flex-col items-center justify-center">
-          <div className="w-24 h-24 rounded-2xl overflow-visible bg-primary flex items-center justify-center flex-shrink-0">
+          <div className="w-24 h-24 rounded-xl overflow-hidden bg-primary flex items-center justify-center flex-shrink-0">
             <Image
               src="/icons/icon-192.png"
               alt="Logo Pempek Domino"
@@ -72,12 +72,12 @@ export default function AdminLoginPage() {
 
         <Card>
           <CardBody className="p-6">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
               <Input
                 label="Username"
                 placeholder="Masukkan username"
                 leftIcon={<User size={18} />}
-                autoComplete="off"
+                autoComplete="username"
                 error={errors.username?.message}
                 {...register('username')}
               />
@@ -91,8 +91,9 @@ export default function AdminLoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="hover:text-brown focus:outline-none transition-colors"
-                    tabIndex={-1}
+                    className="hover:text-brown focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded transition-colors"
+                    aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                    tabIndex={0}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>

@@ -1,39 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { checkRateLimit, resetRateLimit } from '@/lib/rate-limit';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+// Firebase client/admin imports are deferred to the success path so
+// `next build` can collect this route without FIREBASE_* env vars.
 
-if (!ADMIN_EMAIL) {
-  console.error('[AUTH] Missing ADMIN_EMAIL environment variable');
-}
-
-// Rate limiting
+// Rate limiting via shared helper.
 // NOTE: In-memory rate limiting resets on serverless cold starts.
 // Firebase Auth itself enforces 5 login attempts per hour per email,
 // so this serves as an additional defense-in-depth layer.
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-
-const attempts = new Map<string, { count: number; resetTime: number }>();
-
-function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const record = attempts.get(key);
-
-  if (!record || now > record.resetTime) {
-    attempts.set(key, { count: 1, resetTime: now + WINDOW_MS });
-    return { allowed: true, remaining: MAX_ATTEMPTS - 1 };
-  }
-
-  if (record.count >= MAX_ATTEMPTS) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  record.count++;
-  return { allowed: true, remaining: MAX_ATTEMPTS - record.count };
-}
+const RATE_BUCKET = 'admin-login';
 
 export async function POST(req: NextRequest) {
   // Get client IP
@@ -42,7 +20,7 @@ export async function POST(req: NextRequest) {
              'unknown';
 
   // Check rate limit
-  const rateLimit = checkRateLimit(ip);
+  const rateLimit = checkRateLimit(RATE_BUCKET, ip, MAX_ATTEMPTS, WINDOW_MS);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' },
@@ -63,8 +41,9 @@ export async function POST(req: NextRequest) {
 
     const expectedUsername = process.env.ADMIN_USERNAME;
     const passwordHash = process.env.ADMIN_PASSWORD_HASH;
+    const adminEmail = process.env.ADMIN_EMAIL;
 
-    if (!expectedUsername || !passwordHash || !ADMIN_EMAIL) {
+    if (!expectedUsername || !passwordHash || !adminEmail) {
       console.error('[AUTH] Server configuration error: Missing env variables');
       return NextResponse.json(
         { error: 'Server error. Hubungi administrator.' },
@@ -92,23 +71,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Sign in with Firebase Auth
+    // Sign in with Firebase Auth + stamp admin custom claim for Firestore rules
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, password);
-      const token = await userCredential.user.getIdToken();
+      // Dynamic imports: avoid loading Firebase SDKs at build/collect time
+      const [{ signInWithEmailAndPassword }, { auth }, { adminAuth }] = await Promise.all([
+        import('firebase/auth'),
+        import('@/lib/firebase'),
+        import('@/lib/firebase-admin'),
+      ]);
+      const userCredential = await signInWithEmailAndPassword(auth, adminEmail, password);
+
+      // Custom claim `admin: true` → required by firestore.rules isAdmin()
+      await adminAuth.setCustomUserClaims(userCredential.user.uid, { admin: true });
+
+      // Force refresh so the ID token includes the new claim
+      const token = await userCredential.user.getIdToken(true);
 
       // Reset rate limit on successful login
-      attempts.delete(ip);
+      resetRateLimit(RATE_BUCKET, ip);
 
-      // Set HTTP-only cookie (24 hours — reduced from 7 days for security)
-      const response = NextResponse.json({ success: true, adminEmail: ADMIN_EMAIL });
+      // Set HTTP-only cookie (aligned with typical ID token lifetime + margin)
+      const response = NextResponse.json({ success: true, adminEmail });
       response.cookies.set({
         name: 'firebaseAuthToken',
         value: token,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 60 * 60 * 24, // 24 hours
+        maxAge: 60 * 60 * 24, // 24 hours — middleware re-verifies token validity
         path: '/',
       });
 

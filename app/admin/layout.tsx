@@ -28,7 +28,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setUser(profile);
       setLoading(false);
 
-      if (!firebaseUser && pathname !== '/admin/login') {
+      const isAdmin =
+        firebaseUser != null &&
+        (process.env.NEXT_PUBLIC_ADMIN_EMAIL
+          ? firebaseUser.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL
+          : true); // fallback: middleware + Firestore rules still enforce admin
+
+      if ((!firebaseUser || !isAdmin) && pathname !== '/admin/login') {
         router.replace('/admin/login');
       }
     });
@@ -52,6 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  // Client-side guard is UX-only; middleware + Firestore rules enforce admin.
   if (!user) {
     return null;
   }

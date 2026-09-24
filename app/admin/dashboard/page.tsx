@@ -19,36 +19,9 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { SkeletonList, Skeleton } from '@/components/ui/Skeleton';
 import { formatRupiah } from '@/lib/utils';
+import { parseOrder } from '@/lib/firestore';
 import type { Order, DashboardKPI, RevenueDataPoint } from '@/types';
-import { z } from 'zod';
 import { startOfDay, endOfDay, subDays, format } from 'date-fns';
-
-const OrderSchema = z.object({
-  id: z.string(),
-  orderNumber: z.string(),
-  customerName: z.string(),
-  whatsappNumber: z.string(),
-  deliveryMethod: z.enum(['pickup', 'delivery']),
-  deliveryFee: z.number(),
-  items: z.array(z.object({
-    productId: z.string(),
-    productName: z.string(),
-    price: z.number(),
-    quantity: z.number(),
-    subtotal: z.number(),
-  })),
-  subtotal: z.number(),
-  total: z.number(),
-  status: z.enum(['pending', 'ready', 'completed', 'delivered']),
-  paymentStatus: z.enum(['unpaid', 'paid']),
-  createdAt: z.any(),
-  updatedAt: z.any(),
-});
-
-function parseOrder(id: string, data: unknown): Order | null {
-  const result = OrderSchema.safeParse({ id, ...(data as Record<string, unknown>) });
-  return result.success ? (result.data as Order) : null;
-}
 
 export default function AdminDashboard() {
   const [kpis, setKpis] = useState<DashboardKPI>({

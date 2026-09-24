@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ClipboardList,
@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/Button';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
 import { SkeletonCard, SkeletonList } from '@/components/ui/Skeleton';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { useToast } from '@/components/ui/Toast';
 import { formatRupiah, formatDateId, DELIVERY_METHOD_LABELS, cn } from '@/lib/utils';
 import type { Order, BusinessSettings } from '@/types';
 
@@ -56,6 +57,7 @@ function OrderDetailCard({
 }) {
   const [expanded, setExpanded] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const { error: toastError, success: toastSuccess } = useToast();
 
   const handleCancel = async () => {
     if (!window.confirm('Yakin ingin membatalkan pesanan ini?')) return;
@@ -64,9 +66,10 @@ function OrderDetailCard({
       const res = await fetch(`/api/order/${encodeURIComponent(order.orderNumber)}/cancel`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal membatalkan pesanan');
+      toastSuccess('Pesanan berhasil dibatalkan');
       onCancelled?.();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Gagal membatalkan pesanan');
+      toastError(err instanceof Error ? err.message : 'Gagal membatalkan pesanan. Coba lagi.');
     } finally {
       setCancelling(false);
     }

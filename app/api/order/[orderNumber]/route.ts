@@ -1,27 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Rate limiting for public order lookup
-const lookupAttempts = new Map<string, { count: number; resetTime: number }>();
 const MAX_LOOKUPS = 10;
 const WINDOW_MS = 60 * 1000; // 1 minute
-
-function checkLookupRateLimit(key: string): boolean {
-  const now = Date.now();
-  const record = lookupAttempts.get(key);
-
-  if (!record || now > record.resetTime) {
-    lookupAttempts.set(key, { count: 1, resetTime: now + WINDOW_MS });
-    return true;
-  }
-
-  if (record.count >= MAX_LOOKUPS) {
-    return false;
-  }
-
-  record.count++;
-  return true;
-}
+const RATE_BUCKET = 'order-lookup';
 
 /**
  * Public API route for order lookup by order number.
@@ -37,7 +21,7 @@ export async function GET(
              'unknown';
 
   // Rate limit
-  if (!checkLookupRateLimit(ip)) {
+  if (!checkRateLimit(RATE_BUCKET, ip, MAX_LOOKUPS, WINDOW_MS).allowed) {
     return NextResponse.json(
       { error: 'Terlalu banyak permintaan. Coba lagi sebentar.' },
       { status: 429, headers: { 'Retry-After': '60' } }

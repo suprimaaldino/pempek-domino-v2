@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle2, MessageCircle, RefreshCcw, Truck, MapPin, Clock, ClipboardList, Copy, Check, XCircle } from 'lucide-react';
-import { getOrder } from '@/lib/firestore';
 import { getBusinessSettings } from '@/lib/firestore';
 import { formatRupiah, formatDateId, formatWhatsApp, generateWhatsAppLink, PAYMENT_METHOD_LABELS, DELIVERY_METHOD_LABELS } from '@/lib/utils';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
@@ -14,7 +13,8 @@ import { useToast } from '@/components/ui/Toast';
 import type { Order, BusinessSettings } from '@/types';
 
 export default function ConfirmationPage() {
-  const { orderId } = useParams<{ orderId: string }>();
+  /** Route param is the public orderNumber (e.g. PD-20260825-001-X7K9), not the Firestore doc id. */
+  const { orderId: orderKey } = useParams<{ orderId: string }>();
   const router = useRouter();
   const { success: toastSuccess, error: toastError } = useToast();
   const [order, setOrder] = useState<Order | null>(null);
@@ -24,27 +24,59 @@ export default function ConfirmationPage() {
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      getOrder(orderId),
-      getBusinessSettings(),
-    ]).then(([ord, sett]) => {
-      setOrder(ord);
-      setSettings(sett);
-      // Save order to localStorage for easy access on my-orders page
-      if (ord) {
-        try {
-          const saved = JSON.parse(localStorage.getItem('pempek-domino-orders') || '[]') as Array<{ orderNumber: string; orderId: string; customerName: string }>;
-          const exists = saved.some(s => s.orderNumber === ord.orderNumber);
-          if (!exists) {
-            saved.push({ orderNumber: ord.orderNumber, orderId: ord.id, customerName: ord.customerName });
-            if (saved.length > 20) saved.splice(0, saved.length - 20);
-            localStorage.setItem('pempek-domino-orders', JSON.stringify(saved));
-          }
-        } catch { /* localStorage may be unavailable */ }
+    let active = true;
+    const load = async () => {
+      try {
+        const [settingsRes, orderRes] = await Promise.all([
+          getBusinessSettings(),
+          fetch(`/api/order/${encodeURIComponent(orderKey)}`),
+        ]);
+        if (!active) return;
+        setSettings(settingsRes);
+        if (orderRes.ok) {
+          const data = await orderRes.json();
+          const ord = {
+            id: data.orderNumber,
+            orderNumber: data.orderNumber,
+            status: data.status,
+            paymentStatus: data.paymentStatus,
+            customerName: data.customerName,
+            deliveryMethod: data.deliveryMethod,
+            pickupDateTime: data.pickupDateTime,
+            items: data.items ?? [],
+            subtotal: data.subtotal ?? 0,
+            deliveryFee: data.deliveryFee ?? 0,
+            total: data.total ?? 0,
+            notes: data.notes ?? null,
+            createdAt: data.createdAt,
+            paymentProofUrl: data.paymentProofUrl ?? null,
+            whatsappNumber: '',
+            deliveryAddress: null,
+          } as unknown as Order;
+          setOrder(ord);
+          // Save order to localStorage for easy access on my-orders page
+          try {
+            const saved = JSON.parse(localStorage.getItem('pempek-domino-orders') || '[]') as Array<{ orderNumber: string; orderId: string; customerName: string }>;
+            const exists = saved.some(s => s.orderNumber === ord.orderNumber);
+            if (!exists) {
+              saved.push({ orderNumber: ord.orderNumber, orderId: ord.orderNumber, customerName: ord.customerName });
+              if (saved.length > 20) saved.splice(0, saved.length - 20);
+              localStorage.setItem('pempek-domino-orders', JSON.stringify(saved));
+            }
+          } catch { /* localStorage may be unavailable */ }
+        } else {
+          setOrder(null);
+        }
+      } catch (e) {
+        console.error(e);
+        if (active) setOrder(null);
+      } finally {
+        if (active) setLoading(false);
       }
-    }).catch(console.error)
-      .finally(() => setLoading(false));
-  }, [orderId]);
+    };
+    load();
+    return () => { active = false; };
+  }, [orderKey]);
 
   const handleCopy = async () => {
     if (order) {

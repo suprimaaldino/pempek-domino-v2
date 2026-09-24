@@ -90,7 +90,7 @@ function parseProduct(id: string, data: DocumentData): Product | null {
   return result.success ? result.data as Product : null;
 }
 
-function parseOrder(id: string, data: DocumentData): Order | null {
+export function parseOrder(id: string, data: DocumentData): Order | null {
   const result = OrderSchema.safeParse({ id, ...data });
   return result.success ? result.data as Order : null;
 }
@@ -385,7 +385,22 @@ export async function getOrCreateUser(input: {
   const existing = await getDoc(userRef);
 
   if (existing.exists()) {
-    return parseUserProfile(input.uid, existing.data());
+    // Refresh identity fields from current Google profile (name/email may change).
+    const prev = existing.data();
+    const nextEmail = input.email ?? prev.email ?? null;
+    const nextName = input.name ?? prev.name ?? null;
+    if (prev.email !== nextEmail || prev.name !== nextName) {
+      await setDoc(
+        userRef,
+        { email: nextEmail, name: nextName, updatedAt: now },
+        { merge: true }
+      );
+      const refreshed = await getDoc(userRef);
+      return refreshed.exists()
+        ? parseUserProfile(input.uid, refreshed.data())
+        : parseUserProfile(input.uid, { ...prev, email: nextEmail, name: nextName });
+    }
+    return parseUserProfile(input.uid, prev);
   }
 
   await setDoc(

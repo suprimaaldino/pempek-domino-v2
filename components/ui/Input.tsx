@@ -55,7 +55,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
-        {error && <p className="text-xs text-error flex items-center gap-1">{error}</p>}
+        {error && (
+          <p role="alert" className="text-xs text-error flex items-center gap-1">
+            {error}
+          </p>
+        )}
         {helperText && !error && (
           <p className="text-xs text-neutral-400">{helperText}</p>
         )}
@@ -90,7 +94,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           )}
           {...props}
         />
-        {error && <p className="text-xs text-error">{error}</p>}
+        {error && (
+          <p role="alert" className="text-xs text-error">
+            {error}
+          </p>
+        )}
         {helperText && !error && (
           <p className="text-xs text-neutral-400">{helperText}</p>
         )}

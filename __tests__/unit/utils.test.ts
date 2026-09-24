@@ -16,13 +16,15 @@ import {
   formatTime,
   formatStoreHours,
   getCategoryLabel,
+  downloadCSV,
+  PRODUCT_CATEGORIES,
+  resolveProductCategory,
   CATEGORY_LABELS,
   ORDER_STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
   DELIVERY_METHOD_LABELS,
   PAYMENT_METHOD_LABELS,
 } from '@/lib/utils';
-import { resolveProductCategory } from '@/types';
 
 // ========================================
 // cn() - Tailwind class merger
@@ -130,6 +132,10 @@ describe('normalizePhone()', () => {
   test('handles empty string', () => {
     expect(normalizePhone('')).toBe('62');
   });
+
+  test('keeps numbers starting with 62 but not 628', () => {
+    expect(normalizePhone('621234567')).toBe('621234567');
+  });
 });
 
 // ========================================
@@ -209,6 +215,17 @@ describe('formatStoreHours()', () => {
       openingHours: '',
     };
     expect(formatStoreHours(settings)).toBeNull();
+  });
+
+  test('hasTime false when only openingTime is set', () => {
+    expect(
+      formatStoreHours({
+        operationalDays: '',
+        openingTime: '08:00',
+        closingTime: '',
+        openingHours: '',
+      })
+    ).toBeNull();
   });
 });
 
@@ -319,5 +336,120 @@ describe('getCategoryLabel()', () => {
 
   test('returns label for "lainnya" for invalid category', () => {
     expect(getCategoryLabel('invalid')).toBe('Lain-Lain');
+  });
+});
+
+// ========================================
+// toDateSafe paths via formatDate* (private, exercised through public API)
+// ========================================
+describe('date conversion edge cases', () => {
+  test('handles serialized Firestore Timestamp {seconds, nanoseconds}', () => {
+    const ts = { seconds: 1718461800, nanoseconds: 500000000 }; // 2024-06-15T14:30:00.5Z
+    const out = formatDateId(ts);
+    expect(out).toMatch(/2024/);
+    expect(out).not.toBe('—');
+  });
+
+  test('handles serialized Timestamp without nanoseconds field', () => {
+    const ts = { seconds: 1718461800 } as { seconds: number; nanoseconds?: number };
+    expect(formatDateId(ts)).toMatch(/2024/);
+  });
+
+  test('handles ISO string', () => {
+    expect(formatDateId('2024-06-15T14:30:00')).toMatch(/15 Juni 2024/);
+  });
+
+  test('handles epoch milliseconds', () => {
+    expect(formatDateShort(new Date('2024-06-15T14:30:00').getTime())).toBe('15 Jun 2024');
+  });
+
+  test('returns dash for invalid values', () => {
+    expect(formatDateId(null)).toBe('—');
+    expect(formatDateId(undefined)).toBe('—');
+    expect(formatDateId('not-a-date')).toBe('—');
+    expect(formatDateId(12345 as unknown)).not.toBe('—'); // valid epoch
+    expect(formatDateShort({ foo: 'bar' })).toBe('—');
+    expect(formatTime(0)).toBe('—'); // falsy → null path? 0 is falsy
+    expect(formatTime('invalid')).toBe('—');
+  });
+
+  test('formatTime handles timestamp-like and valid date', () => {
+    expect(formatTime({ toDate: () => new Date('2024-06-15T14:30:00') })).toBe('14:30');
+    expect(formatTime('2024-06-15T14:30:00')).toBe('14:30');
+  });
+});
+
+// ========================================
+// re-exports from utils (line coverage for export { ... })
+// ========================================
+describe('utils re-exports', () => {
+  test('PRODUCT_CATEGORIES is re-exported', () => {
+    expect(PRODUCT_CATEGORIES).toEqual(['kecil', 'paket', 'sup_kuah', 'minuman', 'lainnya']);
+  });
+
+  test('resolveProductCategory is re-exported from types via utils usage', () => {
+    expect(resolveProductCategory('kecil')).toBe('kecil');
+  });
+});
+
+// ========================================
+// downloadCSV()
+// ========================================
+describe('downloadCSV()', () => {
+  let created: HTMLAnchorElement | null = null;
+  let revoked: string[] = [];
+  let objectUrls: string[] = [];
+
+  beforeEach(() => {
+    created = null;
+    revoked = [];
+    objectUrls = [];
+    let n = 0;
+    URL.createObjectURL = jest.fn(() => {
+      const u = `blob:mock-${n++}`;
+      objectUrls.push(u);
+      return u;
+    });
+    URL.revokeObjectURL = jest.fn((u: string) => {
+      revoked.push(u);
+    });
+    const originalCreate = document.createElement.bind(document);
+    jest.spyOn(document, 'createElement').mockImplementation(((tag: string) => {
+      const el = originalCreate(tag);
+      if (tag === 'a') {
+        created = el as HTMLAnchorElement;
+        jest.spyOn(el, 'click').mockImplementation(() => {});
+      }
+      return el;
+    }) as typeof document.createElement);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('builds CSV with BOM, escapes quotes, clicks download, revokes URL', () => {
+    downloadCSV('report.csv', [
+      ['Name', 'Note'],
+      ['Pempek', 'He said "hi"'],
+    ]);
+
+    expect(created).toBeTruthy();
+    expect(created!.download).toBe('report.csv');
+    expect(created!.href).toContain('blob:mock-');
+    expect(created!.click).toHaveBeenCalled();
+    expect(revoked).toEqual(objectUrls);
+    expect(revoked.length).toBe(1);
+  });
+
+  test('handles empty rows', () => {
+    downloadCSV('empty.csv', []);
+    expect(created!.download).toBe('empty.csv');
+    expect(revoked.length).toBe(1);
+  });
+
+  test('stringifies non-string cells', () => {
+    downloadCSV('nums.csv', [['a', 1 as unknown as string]]);
+    expect(created!.download).toBe('nums.csv');
   });
 });

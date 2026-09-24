@@ -32,7 +32,10 @@ export async function loginAdmin(username: string, password: string): Promise<vo
   // The password was already transmitted over HTTPS to our API,
   // so sending it to Firebase Auth (also HTTPS) is safe here.
   if (data.adminEmail) {
-    await signInWithEmailAndPassword(auth, data.adminEmail, password);
+    const cred = await signInWithEmailAndPassword(auth, data.adminEmail, password);
+    // Force refresh so custom claim `admin` (set server-side) is present for
+    // Firestore rules isAdmin() checks.
+    await cred.user.getIdToken(true);
   }
 }
 

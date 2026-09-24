@@ -5,19 +5,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Minus, Truck, MapPin, Search } from 'lucide-react';
-import { 
-  createOrder, 
-  generateOrderNumber, 
-  upsertCustomer, 
-  subscribeToProducts 
-} from '@/lib/firestore';
+import { subscribeToProducts, updateOrder } from '@/lib/firestore';
+import { getFirebaseToken } from '@/lib/auth';
 import { formatRupiah, normalizePhone } from '@/lib/utils';
 import { Modal } from '@/components/ui/Modal';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { RadioCard } from '@/components/ui/RadioCard';
 import { useToast } from '@/components/ui/Toast';
-import type { Product, OrderItem } from '@/types';
+import type { Product } from '@/types';
 
 const schema = z.object({
   customerName: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -108,45 +104,42 @@ export function OrderFormModal({ isOpen, onClose }: OrderFormModalProps) {
     setSubmitting(true);
     try {
       const phone = normalizePhone(data.whatsappNumber);
-      const orderNumber = await generateOrderNumber();
-      const subtotal = calculateSubtotal();
-      const total = subtotal + data.deliveryFee;
+      // Server recomputes prices/totals from catalog — only send product ids + qty
+      const items = cartEntries.map(([productId, quantity]) => ({ productId, quantity }));
 
-      const orderItems: OrderItem[] = cartEntries.map(([id, qty]) => {
-        const p = products.find(prod => prod.id === id)!;
-        return {
-          productId: id,
-          productName: p.name,
-          price: p.price,
-          quantity: qty,
-          subtotal: p.price * qty,
-        };
+      const idToken = await getFirebaseToken();
+      const res = await fetch('/api/order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
+        body: JSON.stringify({
+          customerName: data.customerName,
+          whatsappNumber: phone,
+          items,
+          deliveryMethod: data.deliveryMethod,
+          pickupDateTime: data.deliveryMethod === 'pickup' ? data.pickupDateTime : undefined,
+          deliveryAddress: data.deliveryMethod === 'delivery' ? data.deliveryAddress : undefined,
+          deliveryFee: data.deliveryFee,
+          paymentMethod: data.paymentMethod,
+          notes: data.notes,
+        }),
       });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Gagal membuat pesanan');
 
-      await createOrder({
-        orderNumber,
-        customerName: data.customerName,
-        whatsappNumber: phone,
-        deliveryMethod: data.deliveryMethod,
-        pickupDateTime: data.deliveryMethod === 'pickup' ? data.pickupDateTime : undefined,
-        deliveryAddress: data.deliveryMethod === 'delivery' ? data.deliveryAddress : undefined,
-        deliveryFee: data.deliveryFee,
-        items: orderItems,
-        subtotal,
-        total,
-        status: 'pending',
-        paymentMethod: data.paymentMethod,
-        paymentStatus: data.paymentStatus,
-        notes: data.notes,
-      });
+      // Admin may mark as paid immediately (rules allow admin update)
+      if (data.paymentStatus === 'paid') {
+        await updateOrder(result.orderId, { paymentStatus: 'paid' });
+      }
 
-      await upsertCustomer(data.customerName, phone, total);
       toastSuccess('Pesanan admin berhasil dibuat');
       reset();
       setCart({});
       onClose();
-    } catch {
-      toastError('Gagal membuat pesanan');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Gagal membuat pesanan');
     } finally {
       setSubmitting(false);
     }
