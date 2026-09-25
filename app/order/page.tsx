@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -87,6 +87,7 @@ export default function OrderPage() {
     minuman: false,
     lainnya: false,
   });
+  const appliedDefaultCategory = useRef(false);
 
   const {
     register,
@@ -131,6 +132,21 @@ export default function OrderPage() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setValue]);
+
+  // Opening category comes from admin settings (fallback: Pempek Paket).
+  useEffect(() => {
+    if (!businessSettings || appliedDefaultCategory.current) return;
+    appliedDefaultCategory.current = true;
+    const chosen = businessSettings.defaultExpandedCategory ?? 'paket';
+    setExpandedCategories({
+      paket: false,
+      kecil: false,
+      sup_kuah: false,
+      minuman: false,
+      lainnya: false,
+      ...(chosen !== 'none' ? { [chosen]: true } : {}),
+    });
+  }, [businessSettings]);
 
   useEffect(() => {
     setDelivery({

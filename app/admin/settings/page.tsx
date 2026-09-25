@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { Input, Textarea } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
-import type { BusinessSettings } from '@/types';
+import { CATEGORY_LABELS } from '@/lib/utils';
+import { PRODUCT_CATEGORIES, type BusinessSettings, type ProductCategory } from '@/types';
 
 const DEFAULT_SETTINGS: BusinessSettings = {
   storeName: 'Pempek Domino',
@@ -20,6 +21,7 @@ const DEFAULT_SETTINGS: BusinessSettings = {
   openingTime: '08:00',
   closingTime: '20:00',
   googleMapsUrl: '',
+  defaultExpandedCategory: 'paket',
 };
 
 function normalizeBusinessSettings(raw: BusinessSettings): BusinessSettings {
@@ -166,6 +168,36 @@ export default function SettingsPage() {
                 Simpan Perubahan
               </Button>
             </div>
+          </CardBody>
+        </Card>
+
+        <Card className="mt-4">
+          <CardHeader
+            title="Tampilan Halaman Menu"
+            subtitle="Tentukan kategori mana yang terbuka otomatis saat pelanggan membuka halaman pesanan"
+          />
+          <CardBody>
+            <label className="text-sm font-semibold text-brown">Kategori terbuka otomatis</label>
+            <select
+              className="w-full rounded-input border border-brown/20 px-4 py-3 text-brown bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+              value={businessSettings.defaultExpandedCategory ?? 'paket'}
+              onChange={(e) =>
+                setBusinessSettings({
+                  ...businessSettings,
+                  defaultExpandedCategory: e.target.value as ProductCategory | 'none',
+                })
+              }
+            >
+              <option value="none">Semua kategori tertutup</option>
+              {PRODUCT_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {CATEGORY_LABELS[c]}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-brown/60 mt-2">
+              Pelanggan tetap bisa membuka atau menutup kategori sesuai keinginannya.
+            </p>
           </CardBody>
         </Card>
       </form>

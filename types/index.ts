@@ -144,6 +144,8 @@ export interface BusinessSettings {
   openingTime: string;
   closingTime: string;
   googleMapsUrl?: string;
+  /** Kategori yang terbuka otomatis di halaman menu. 'none' = semua tertutup. */
+  defaultExpandedCategory?: ProductCategory | 'none';
 }
 
 // ─── Cart (client-side only) ──────────────────────────────────────────────────
