@@ -16,10 +16,11 @@
 
 import { NextRequest } from 'next/server';
 
-// firebase-admin pulls ESM-only `jose` (Jest cannot parse without transform).
-// Mock the app wrappers so route handlers load without real Firebase.
+// `firebase-admin/auth` is never imported (it pulls ESM-only `jose`, which Jest
+// cannot parse and Vercel's Rust runtime cannot require). Custom claims are
+// stamped over the Identity Toolkit REST API, so only that is mocked here.
 jest.mock('@/lib/firebase-admin', () => ({
-  adminAuth: { setCustomUserClaims: jest.fn().mockResolvedValue(undefined) },
+  setAdminClaim: jest.fn().mockResolvedValue(undefined),
   adminDb: {},
   adminStorage: {},
   getAdminApp: jest.fn(),
@@ -159,7 +160,7 @@ describe('Admin cookie security contract', () => {
     expect(src).toMatch(/sameSite:\s*'strict'/);
     expect(src).toMatch(/secure:\s*process\.env\.NODE_ENV === 'production'/);
     expect(src).toMatch(/name:\s*'firebaseAuthToken'/);
-    expect(src).toMatch(/setCustomUserClaims/);
+    expect(src).toMatch(/setAdminClaim/);
   });
 
   test('logout clears the auth cookie', async () => {
