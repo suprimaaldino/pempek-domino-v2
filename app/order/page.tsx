@@ -574,6 +574,21 @@ export default function OrderPage() {
 
         <OrderSummarySheet onSubmit={handleSubmit(onSubmit)} loading={submitting} />
       </form>
+
+      {/* Legal links — required for Google OAuth branding verification */}
+      <footer className="max-w-lg mx-auto px-4 pt-8 pb-4">
+        <p className="text-xs text-neutral-500 text-center leading-relaxed">
+          Dengan memesan, Anda menyetujui{' '}
+          <Link href="/terms" className="text-primary font-semibold hover:underline">
+            Syarat &amp; Ketentuan
+          </Link>{' '}
+          dan{' '}
+          <Link href="/privacy" className="text-primary font-semibold hover:underline">
+            Kebijakan Privasi
+          </Link>
+          .
+        </p>
+      </footer>
     </main>
   );
 }
