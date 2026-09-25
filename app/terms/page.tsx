@@ -119,8 +119,7 @@ export default function TermsPage() {
             <br />
             Email: aldinoaja@gmail.com
             <br />
-            {/* GANTI: alamat outlet dan kota sebelum halaman ini dipakai secara resmi. */}
-            <span className="text-brown/40">Alamat outlet: [lengkapi alamat lengkap dan kota]</span>
+            Pasanggahan Kasuari A5, Ponegaran, Jambidan, Banguntapan, Bantul, DI Yogyakarta 55194
           </p>
         </section>
       </div>
