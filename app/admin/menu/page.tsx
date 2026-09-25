@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import {
   Plus,
-  UtensilsCrossed,
   PackageCheck,
   AlertCircle
 } from 'lucide-react';
@@ -127,13 +126,8 @@ export default function MenuManagementPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brown/10 pb-6">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <UtensilsCrossed size={24} />
-            </div>
-            <h1 className="font-display font-bold text-3xl text-brown">Manajemen Menu</h1>
-          </div>
-          <p className="text-brown/50">Atur produk, harga, dan ketersediaan menu.</p>
+          <h1 className="font-display font-bold text-3xl text-brown">Manajemen Menu</h1>
+          <p className="text-brown/60">Atur produk, harga, dan ketersediaan menu.</p>
         </div>
         <Button onClick={() => openModal()}>
           <Plus size={18} />
@@ -164,7 +158,7 @@ export default function MenuManagementPage() {
 
             return (
               <section key={cat} aria-label={CATEGORY_LABELS[cat]}>
-                <h2 className="text-sm font-bold text-brown/40 uppercase tracking-widest mb-4 border-l-4 border-primary pl-3">
+                <h2 className="text-sm font-bold text-brown/60 uppercase tracking-widest mb-4 border-l-4 border-primary pl-3">
                   {CATEGORY_LABELS[cat]}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-stagger">

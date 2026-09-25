@@ -43,9 +43,9 @@ export function EmptyState({ type = 'generic', title, description, action }: Emp
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <div className="mb-4 opacity-60">{config.icon}</div>
-      <h3 className="font-display font-semibold text-brown text-xl mb-1">
+      <h2 className="font-display font-semibold text-brown text-xl mb-1">
         {title ?? config.title}
-      </h3>
+      </h2>
       {(description ?? config.description) && (
         <p className="text-brown/60 text-sm">{description ?? config.description}</p>
       )}

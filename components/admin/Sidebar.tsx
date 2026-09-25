@@ -70,7 +70,7 @@ export function AdminSidebar() {
             </div>
             <div>
               <p className="font-display font-bold text-brown text-base leading-tight">Pempek Domino</p>
-              <p className="text-xs text-brown/50">Admin Panel</p>
+              <p className="text-xs text-brown/60">Admin Panel</p>
             </div>
           </div>
         </div>
@@ -124,7 +124,7 @@ export function AdminSidebar() {
                 href={href}
                 className={cn(
                   'flex flex-col items-center justify-center gap-0.5 min-w-[64px] px-2 py-2 rounded-xl transition-all',
-                  active ? 'text-primary' : 'text-brown/50 hover:text-brown/70'
+                  active ? 'text-primary' : 'text-brown/60 hover:text-brown/70'
                 )}
               >
                 <Icon 
@@ -147,7 +147,7 @@ export function AdminSidebar() {
               'flex flex-col items-center justify-center gap-0.5 min-w-[64px] px-2 py-2 rounded-xl transition-all',
               isInMoreSection || isMoreSheetOpen
                 ? 'text-primary'
-                : 'text-brown/50 hover:text-brown/70'
+                : 'text-brown/60 hover:text-brown/70'
             )}
             aria-label="Menu lainnya"
             aria-expanded={isMoreSheetOpen}

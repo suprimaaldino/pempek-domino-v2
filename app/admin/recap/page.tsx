@@ -127,7 +127,7 @@ export default function RecapPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-display font-bold text-3xl text-brown">Rekap Penjualan</h1>
-          <p className="text-brown/50">Laporan performa bisnis dalam periode tertentu.</p>
+          <p className="text-brown/60">Laporan performa bisnis dalam periode tertentu.</p>
         </div>
         <Button variant="outline" onClick={handleExport} disabled={orders.length === 0}>
           <Download size={18} />
@@ -210,7 +210,7 @@ export default function RecapPage() {
         <CardBody className="overflow-x-auto pt-0">
           <table className="w-full text-sm text-left">
             <thead>
-              <tr className="border-b border-brown/10 text-brown/40 font-semibold uppercase text-[10px] tracking-wider">
+              <tr className="border-b border-brown/10 text-brown/60 font-semibold uppercase text-[10px] tracking-wider">
                 <th className="py-3 pr-4">Kategori</th>
                 <th className="py-3 px-4 text-center">Terjual</th>
                 <th className="py-3 pl-4 text-right">Total Nilai</th>
@@ -226,7 +226,7 @@ export default function RecapPage() {
               ))}
               {categoryBreakdown.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-10 text-center text-brown/40 italic">Tidak ada data untuk periode ini.</td>
+                  <td colSpan={3} className="py-10 text-center text-brown/60 italic">Tidak ada data untuk periode ini.</td>
                 </tr>
               )}
             </tbody>
@@ -240,7 +240,7 @@ export default function RecapPage() {
         <CardBody className="overflow-x-auto pt-0">
           <table className="w-full text-sm text-left">
             <thead>
-              <tr className="border-b border-brown/10 text-brown/40 font-semibold uppercase text-[10px] tracking-wider">
+              <tr className="border-b border-brown/10 text-brown/60 font-semibold uppercase text-[10px] tracking-wider">
                 <th className="py-3 pr-4">Nama Produk</th>
                 <th className="py-3 px-4 text-center">Terjual</th>
                 <th className="py-3 pl-4 text-right">Total Nilai</th>
@@ -256,7 +256,7 @@ export default function RecapPage() {
               ))}
               {productStats.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-10 text-center text-brown/40 italic">Tidak ada data untuk periode ini.</td>
+                  <td colSpan={3} className="py-10 text-center text-brown/60 italic">Tidak ada data untuk periode ini.</td>
                 </tr>
               )}
             </tbody>

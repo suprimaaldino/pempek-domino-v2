@@ -42,8 +42,18 @@
 }
 
 @layer utilities {
+  /* Used by pages for notched devices — env() is 0 elsewhere, so no visual change. */
+  .pt-safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   .safe-area-pb {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Reserve room for the fixed bottom nav, including the iOS home-indicator inset. */
+  .pb-nav-safe {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
   }
 
   .h-safe-area-inset-bottom {

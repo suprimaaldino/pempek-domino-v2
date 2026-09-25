@@ -25,11 +25,11 @@ export const OrderCard = memo(function OrderCard({ order, compact = false }: Ord
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
           <p className="font-bold text-brown text-sm">{order.customerName}</p>
-          <p className="text-xs text-brown/50 font-mono">{order.orderNumber}</p>
+          <p className="text-xs text-brown/60 font-mono">{order.orderNumber}</p>
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <OrderStatusBadge status={order.status} />
-          {time && <span className="text-xs text-brown/40">{time}</span>}
+          {time && <span className="text-xs text-brown/60">{time}</span>}
         </div>
       </div>
 

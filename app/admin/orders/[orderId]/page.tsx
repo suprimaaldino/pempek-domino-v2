@@ -138,7 +138,7 @@ export default function OrderDetailPage() {
               <h1 className="font-display font-bold text-2xl text-brown">Detail Pesanan</h1>
               <Badge label={order.orderNumber} variant="neutral" className="font-mono" />
             </div>
-            <p className="text-brown/50 text-sm">
+            <p className="text-brown/60 text-sm">
               Dibuat pada {formatDateId(order.createdAt)}
             </p>
           </div>
@@ -147,7 +147,12 @@ export default function OrderDetailPage() {
               <MessageCircle size={16} />
               WhatsApp
             </Button>
-            <Button variant="danger" size="sm" onClick={() => setShowDeleteConfirm(true)}>
+            <Button
+              variant="danger"
+              size="sm"
+              aria-label="Hapus pesanan"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
               <Trash2 size={16} />
             </Button>
           </div>
@@ -207,14 +212,14 @@ export default function OrderDetailPage() {
               <h2 className="font-display font-bold text-lg text-brown mb-4">Item Pesanan</h2>
               <div className="divide-y divide-brown/5">
                 {order.items.map((item, i) => (
-                  <div key={i} className="py-3 flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold text-brown">{item.productName}</p>
-                      <p className="text-xs text-brown/50">
+                  <div key={i} className="py-3 flex justify-between items-center gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-brown break-words">{item.productName}</p>
+                      <p className="text-xs text-brown/60">
                         {formatRupiah(item.price)} x {item.quantity}
                       </p>
                     </div>
-                    <p className="font-bold text-brown">{formatRupiah(item.subtotal)}</p>
+                    <p className="font-bold text-brown shrink-0">{formatRupiah(item.subtotal)}</p>
                   </div>
                 ))}
               </div>
@@ -242,17 +247,17 @@ export default function OrderDetailPage() {
     <div className="space-y-6 animate-page-in">
           <Card>
             <CardBody className="space-y-4">
-              <h3 className="font-semibold text-brown flex items-center gap-2">
+              <h2 className="font-semibold text-brown flex items-center gap-2">
                 <User size={16} className="text-primary" />
                 Informasi Pelanggan
-              </h3>
+              </h2>
               <div className="space-y-3 pt-2 text-sm">
                 <div>
-                  <label className="text-xs text-brown/40 block">Nama</label>
+                  <label className="text-xs text-brown/60 block">Nama</label>
                   <p className="font-semibold text-brown">{order.customerName}</p>
                 </div>
                 <div>
-                  <label className="text-xs text-brown/40 block">WhatsApp</label>
+                  <label className="text-xs text-brown/60 block">WhatsApp</label>
                   <a 
                     href={`https://wa.me/${order.whatsappNumber.replace(/^0/, '62')}`}
                     target="_blank"
@@ -269,10 +274,10 @@ export default function OrderDetailPage() {
 
           <Card>
             <CardBody className="space-y-4">
-              <h3 className="font-semibold text-brown flex items-center gap-2">
+              <h2 className="font-semibold text-brown flex items-center gap-2">
                 <Truck size={16} className="text-primary" />
                 Pengiriman & Pembayaran
-              </h3>
+              </h2>
               <div className="space-y-3 pt-2 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-brown/60">Metode</span>
@@ -289,7 +294,7 @@ export default function OrderDetailPage() {
                 ) : (
                   <div>
                     <span className="text-brown/60 block mb-1">Alamat</span>
-                    <p className="text-brown font-medium leading-relaxed">{order.deliveryAddress}</p>
+                    <p className="text-brown font-medium leading-relaxed break-words">{order.deliveryAddress}</p>
                   </div>
                 )}
                 <div className="pt-2 border-t border-brown/5 space-y-3">
@@ -312,7 +317,7 @@ export default function OrderDetailPage() {
             <Card className="bg-cream border-secondary/20 shadow-none">
               <CardBody>
                 <h3 className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Catatan Pesanan</h3>
-                <p className="text-sm text-brown italic">"{order.notes}"</p>
+                <p className="text-sm text-brown italic break-words">"{order.notes}"</p>
               </CardBody>
             </Card>
           )}

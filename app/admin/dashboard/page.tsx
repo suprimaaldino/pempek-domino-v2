@@ -10,6 +10,7 @@ import {
   Plus
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { KPICard } from '@/components/admin/KPICard';
@@ -24,6 +25,7 @@ import type { Order, DashboardKPI, RevenueDataPoint } from '@/types';
 import { startOfDay, endOfDay, subDays, format } from 'date-fns';
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [kpis, setKpis] = useState<DashboardKPI>({
     ordersToday: 0,
     revenueToday: 0,
@@ -123,14 +125,17 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display font-bold text-3xl text-brown">Ringkasan Bisnis</h1>
-          <p className="text-brown/50">Halo Admin, berikut perkembangan hari ini.</p>
+          <p className="text-brown/60">Halo Admin, berikut perkembangan hari ini.</p>
         </div>
-        <Link href="/order" target="_blank">
-          <Button variant="secondary" size="sm" className="hidden sm:inline-flex">
-            <Plus size={16} />
-            Pesanan Baru
-          </Button>
-        </Link>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="hidden sm:inline-flex"
+          onClick={() => window.open('/order', '_blank', 'noopener,noreferrer')}
+        >
+          <Plus size={16} />
+          Pesanan Baru
+        </Button>
       </div>
 
       {/* Error State */}
@@ -190,12 +195,20 @@ export default function AdminDashboard() {
 
           {/* Quick Actions for Mobile */}
           <div className="flex sm:hidden gap-3">
-            <Link href="/admin/orders" className="flex-1">
-              <Button variant="outline" className="w-full text-xs">Semua Pesanan</Button>
-            </Link>
-            <Link href="/admin/recap" className="flex-1">
-              <Button variant="outline" className="w-full text-xs">Rekap Harian</Button>
-            </Link>
+            <Button
+              variant="outline"
+              className="flex-1 text-xs"
+              onClick={() => router.push('/admin/orders')}
+            >
+              Semua Pesanan
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 text-xs"
+              onClick={() => router.push('/admin/recap')}
+            >
+              Rekap Harian
+            </Button>
           </div>
         </div>
 
@@ -217,7 +230,7 @@ export default function AdminDashboard() {
                 <OrderCard key={order.id} order={order} compact />
               ))
             ) : (
-              <p className="text-center text-brown/40 pt-10">Belum ada pesanan.</p>
+              <p className="text-center text-brown/60 pt-10">Belum ada pesanan.</p>
             )}
           </div>
         </div>

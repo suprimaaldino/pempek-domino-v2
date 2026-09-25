@@ -68,7 +68,7 @@ export default function OrderPage() {
   const router = useRouter();
   const { success: toastSuccess, error: toastError } = useToast();
   const { items, subtotal, setCustomerInfo, setDelivery, setPaymentMethod, clearCart } = useOrderStore();
-  const { grouped, loading: productsLoading } = useProducts();
+  const { products, grouped, loading: productsLoading, error: productsError } = useProducts();
 
   // Optional customer auth (soft-auth): never blocks ordering, never clears
   // the cart/order state (which lives in the separate orderStore).
@@ -279,7 +279,7 @@ export default function OrderPage() {
             </div>
             <div>
               <h1 className="font-bold text-neutral-900 text-base leading-tight">Pempek Domino</h1>
-              <p className="text-xs text-neutral-400">Pesan Pempek Palembang</p>
+              <p className="text-xs text-neutral-500">Pesan Pempek Palembang</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -306,6 +306,21 @@ export default function OrderPage() {
 
             {productsLoading ? (
               <SkeletonList count={4} />
+            ) : productsError ? (
+              <div
+                role="alert"
+                className="py-8 px-4 text-center rounded-card bg-error/10 text-error border border-error/20"
+              >
+                <p className="font-semibold">{productsError}</p>
+                <p className="text-sm mt-1">Periksa koneksi internet kamu, lalu muat ulang halaman.</p>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="py-8 px-4 text-center rounded-card bg-white border border-neutral-100 shadow-card">
+                <p className="font-semibold text-neutral-900">Menu belum tersedia</p>
+                <p className="text-sm text-neutral-500 mt-1">
+                  Saat ini belum ada menu yang bisa dipesan. Silakan kembali beberapa saat lagi.
+                </p>
+              </div>
             ) : (
               categoryKeys.map((cat) => {
                 const prods = grouped[cat];
@@ -321,14 +336,14 @@ export default function OrderPage() {
                       aria-controls={`category-${cat}`}
                     >
                       <div>
-                        <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">
+                        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">
                           {CATEGORY_LABELS[cat]}
                         </p>
                         <p className="text-xs text-neutral-500 mt-0.5">{prods.length} menu</p>
                       </div>
                       <ChevronDown
                         size={18}
-                        className={`text-neutral-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        className={`text-neutral-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                         aria-hidden="true"
                       />
                     </button>
@@ -539,7 +554,7 @@ export default function OrderPage() {
               <div className="flex items-center gap-2 mb-3">
                 <Upload size={14} className="text-primary" />
                 <p className="font-semibold text-neutral-800 text-sm">Upload Bukti Pembayaran</p>
-                <span className="ml-auto text-xs text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-pill">opsional</span>
+                <span className="ml-auto text-xs text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-pill">opsional</span>
               </div>
               <ImageUpload
                 label=""
@@ -547,10 +562,10 @@ export default function OrderPage() {
                 storagePath="payment-proofs"
                 onUploaded={(url) => setPaymentProofUrl(url)}
               />
-              <p className="text-xs text-neutral-400 mt-2">Upload sekarang atau kirim via WhatsApp setelah pesan dibuat.</p>
+              <p className="text-xs text-neutral-500 mt-2">Upload sekarang atau kirim via WhatsApp setelah pesan dibuat.</p>
             </div>
             */}
-            <p className="mt-3 text-xs text-neutral-400">
+            <p className="mt-3 text-xs text-neutral-500">
               Bukti bayar dikirim via WhatsApp setelah pesanan dibuat.
             </p>
           </section>

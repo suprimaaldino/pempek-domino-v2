@@ -62,10 +62,10 @@ function PaymentInfo({
             <span className="font-semibold text-brown">{provider || '-'}</span>
           </div>
 
-          <div className="flex justify-between items-center gap-3">
+          <div className="flex justify-between items-center gap-3 min-w-0">
             <span className="text-brown/60 text-sm shrink-0">No. {title.includes('Bank') ? 'Rekening / Account' : 'Account'}</span>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-primary text-base tracking-wider select-all">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-bold text-primary text-base tracking-wider select-all break-all min-w-0">
                 {accountNumber || '-'}
               </span>
               {accountNumber && (
@@ -193,7 +193,7 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
             ) : (
               <div className="w-48 h-48 bg-brown/5 rounded-input flex flex-col items-center justify-center gap-2">
                 <QrCode size={48} className="text-brown/20" />
-                <p className="text-xs text-brown/40">QR Code belum tersedia</p>
+                <p className="text-xs text-brown/60">QR Code belum tersedia</p>
               </div>
             )}
 
@@ -224,7 +224,7 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
             >
               <div className="text-center">
                 <h3 className="font-display font-bold text-brown text-lg">QRIS Pempek Domino</h3>
-                <p className="text-xs text-brown/50">Tunjukkan kode QR ini ke aplikasi e-wallet Anda</p>
+                <p className="text-xs text-brown/60">Tunjukkan kode QR ini ke aplikasi e-wallet Anda</p>
               </div>
 
               <div className="relative w-full aspect-square max-w-[280px] bg-white border border-brown/5 rounded-xl overflow-hidden p-2">
@@ -256,7 +256,7 @@ export function PaymentPreview({ method, config }: PaymentPreviewProps) {
                   Tutup
                 </button>
               </div>
-              <p className="text-[10px] text-brown/40 text-center">
+              <p className="text-[10px] text-brown/60 text-center">
                 Atau tekan dan tahan gambar untuk menyimpan ke galeri HP Anda.
               </p>
             </div>

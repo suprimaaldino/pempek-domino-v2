@@ -11,7 +11,18 @@ export function CustomerCard({ customer, onClick }: CustomerCardProps) {
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-card shadow-card border border-brown/5 p-4 cursor-pointer hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200"
+      onKeyDown={(e) => {
+        if (!onClick) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      className={`bg-white rounded-card shadow-card border border-brown/5 p-4 transition-all duration-200 ${
+        onClick ? 'cursor-pointer hover:shadow-card-hover hover:-translate-y-0.5' : ''
+      }`}
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-3">
@@ -22,7 +33,7 @@ export function CustomerCard({ customer, onClick }: CustomerCardProps) {
         </div>
         <div className="min-w-0">
           <p className="font-bold text-brown truncate">{customer.name}</p>
-          <div className="flex items-center gap-1 text-xs text-brown/50">
+          <div className="flex items-center gap-1 text-xs text-brown/60">
             <Phone size={11} />
             <span>{formatWhatsApp(customer.whatsappNumber)}</span>
           </div>
@@ -48,7 +59,7 @@ export function CustomerCard({ customer, onClick }: CustomerCardProps) {
       </div>
 
       {customer.lastOrderAt && (
-        <p className="text-xs text-brown/40 mt-2">
+        <p className="text-xs text-brown/60 mt-2">
           Terakhir pesan: {formatDateShort(customer.lastOrderAt)}
         </p>
       )}

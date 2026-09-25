@@ -49,7 +49,7 @@ export function StatusStepper({ status }: StatusStepperProps) {
                   'w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all',
                   done && 'bg-success border-success text-white',
                   active && 'bg-primary border-primary text-white',
-                  !done && !active && 'bg-white border-brown/20 text-brown/40'
+                  !done && !active && 'bg-white border-brown/20 text-brown/60'
                 )}
               >
                 {done ? <Check size={14} /> : idx + 1}
@@ -57,7 +57,7 @@ export function StatusStepper({ status }: StatusStepperProps) {
               <span
                 className={cn(
                   'text-xs font-semibold whitespace-nowrap',
-                  active ? 'text-primary' : done ? 'text-success' : 'text-brown/40'
+                  active ? 'text-primary' : done ? 'text-success' : 'text-brown/60'
                 )}
               >
                 {step.label}

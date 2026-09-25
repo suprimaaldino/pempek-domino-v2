@@ -18,6 +18,7 @@ export default function ConfirmationPage() {
   const router = useRouter();
   const { success: toastSuccess, error: toastError } = useToast();
   const [order, setOrder] = useState<Order | null>(null);
+  const [loadError, setLoadError] = useState('');
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -26,13 +27,14 @@ export default function ConfirmationPage() {
   useEffect(() => {
     let active = true;
     const load = async () => {
+      // Settings are optional for this view — a failure must not hide a valid order.
+      getBusinessSettings()
+        .then((s) => { if (active) setSettings(s); })
+        .catch(() => { if (active) setSettings(null); });
       try {
-        const [settingsRes, orderRes] = await Promise.all([
-          getBusinessSettings(),
-          fetch(`/api/order/${encodeURIComponent(orderKey)}`),
-        ]);
+        setLoadError('');
+        const orderRes = await fetch(`/api/order/${encodeURIComponent(orderKey)}`);
         if (!active) return;
-        setSettings(settingsRes);
         if (orderRes.ok) {
           const data = await orderRes.json();
           const ord = {
@@ -64,12 +66,14 @@ export default function ConfirmationPage() {
               localStorage.setItem('pempek-domino-orders', JSON.stringify(saved));
             }
           } catch { /* localStorage may be unavailable */ }
-        } else {
+        } else if (orderRes.status === 404) {
           setOrder(null);
+        } else {
+          setLoadError('Gagal memuat pesanan. Coba lagi beberapa saat.');
         }
       } catch (e) {
         console.error(e);
-        if (active) setOrder(null);
+        if (active) setLoadError('Gagal memuat pesanan. Periksa koneksi internet kamu.');
       } finally {
         if (active) setLoading(false);
       }
@@ -154,6 +158,18 @@ export default function ConfirmationPage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-cream flex flex-col items-center justify-center p-4 text-center">
+        <p role="alert" className="text-brown/60 text-lg mb-4">{loadError}</p>
+        <div className="flex gap-2">
+          <Button onClick={() => router.refresh()}>Coba Lagi</Button>
+          <Button variant="outline" onClick={() => router.push('/order')}>Buat Pesanan Baru</Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!order) {
     return (
       <div className="min-h-screen bg-cream flex flex-col items-center justify-center p-4 text-center">
@@ -175,11 +191,11 @@ export default function ConfirmationPage() {
             <CheckCircle2 size={36} className="text-white" />
           </div>
           <h1 className="font-bold text-2xl mb-1">Pesanan Masuk!</h1>
-          <p className="text-white/70 text-sm">Kami akan segera memproses pesananmu</p>
-          <div className="mt-4 bg-white/10 rounded-xl px-5 py-2.5 inline-block relative">
-            <p className="text-white/60 text-xs mb-1">No. Pesanan (Salin untuk Cek Status)</p>
-            <div className="flex items-center gap-2 justify-center">
-              <span className="font-mono font-bold text-lg tracking-wide">{order.orderNumber}</span>
+          <p className="text-white/90 text-sm">Kami akan segera memproses pesananmu</p>
+          <div className="mt-4 bg-white/10 rounded-xl px-5 py-2.5 inline-block relative max-w-full">
+            <p className="text-white/90 text-xs mb-1">No. Pesanan (Salin untuk Cek Status)</p>
+            <div className="flex items-center gap-2 justify-center min-w-0">
+              <span className="font-mono font-bold text-lg tracking-wide break-all">{order.orderNumber}</span>
               <button
                 onClick={handleCopy}
                 className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 active:scale-95 transition-all text-white flex items-center justify-center"
@@ -204,15 +220,15 @@ export default function ConfirmationPage() {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 mb-1">Status Pesanan</p>
+                <p className="text-xs text-neutral-500 mb-1">Status Pesanan</p>
                 <OrderStatusBadge status={order.status} />
               </div>
               <div className="text-right">
-                <p className="text-xs text-neutral-400 mb-1">Status Pembayaran</p>
+                <p className="text-xs text-neutral-500 mb-1">Status Pembayaran</p>
                 <PaymentStatusBadge status={order.paymentStatus} />
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-neutral-100 text-xs text-neutral-400">
+            <div className="mt-3 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
               {order.createdAt && formatDateId(order.createdAt)}
             </div>
           </CardBody>
@@ -265,18 +281,18 @@ export default function ConfirmationPage() {
                 <div key={i} className="flex justify-between text-sm">
                   <span className="text-neutral-700">
                     {item.productName}{' '}
-                    <span className="text-neutral-400">x{item.quantity}</span>
+                    <span className="text-neutral-500">x{item.quantity}</span>
                   </span>
                   <span className="font-semibold text-neutral-800">{formatRupiah(item.subtotal)}</span>
                 </div>
               ))}
               <div className="border-t border-neutral-100 pt-2 mt-2 space-y-1">
-                <div className="flex justify-between text-sm text-neutral-400">
+                <div className="flex justify-between text-sm text-neutral-500">
                   <span>Subtotal</span>
                   <span>{formatRupiah(order.subtotal)}</span>
                 </div>
                 {order.deliveryFee > 0 && (
-                  <div className="flex justify-between text-sm text-neutral-400">
+                  <div className="flex justify-between text-sm text-neutral-500">
                     <span>Ongkir</span>
                     <span>{formatRupiah(order.deliveryFee)}</span>
                   </div>
@@ -328,7 +344,7 @@ export default function ConfirmationPage() {
               <XCircle size={18} />
               Batalkan Pesanan
             </Button>
-            <p className="text-[11px] text-center text-neutral-400 leading-normal px-2">
+            <p className="text-[11px] text-center text-neutral-500 leading-normal px-2">
               Pesanan yang sudah diproses tidak dapat dibatalkan.
             </p>
           </div>
@@ -336,12 +352,14 @@ export default function ConfirmationPage() {
 
         {/* Actions */}
         <div className="flex flex-col gap-3 pb-4">
-          <a href={waLink} target="_blank" rel="noopener noreferrer" aria-label="Bagikan ke WhatsApp">
-            <Button className="w-full" size="lg">
-              <MessageCircle size={18} />
-              Bagikan ke WhatsApp
-            </Button>
-          </a>
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={() => window.open(waLink, '_blank', 'noopener,noreferrer')}
+          >
+            <MessageCircle size={18} />
+            Bagikan ke WhatsApp
+          </Button>
           <div className="space-y-1.5">
             <Button
               variant="outline"
@@ -352,7 +370,7 @@ export default function ConfirmationPage() {
               <ClipboardList size={18} />
               Cek Status Pesanan
             </Button>
-            <p className="text-[11px] text-center text-neutral-400 leading-normal px-2">
+            <p className="text-[11px] text-center text-neutral-500 leading-normal px-2">
               💡 Salin <span className="font-bold">No. Pesanan</span> di atas terlebih dahulu, kemudian klik tombol ini untuk memantau status pesananmu secara real-time.
             </p>
           </div>

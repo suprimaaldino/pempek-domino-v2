@@ -68,6 +68,17 @@ export function ImageUpload({ currentUrl, onUploaded, storagePath, label = 'Uplo
 
       <div
         onClick={() => !uploading && inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (uploading) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
+        role="button"
+        tabIndex={uploading ? -1 : 0}
+        aria-disabled={uploading}
+        aria-label={label ? `${label}: klik atau tekan Enter untuk mengunggah gambar` : 'Unggah gambar'}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
@@ -103,7 +114,7 @@ export function ImageUpload({ currentUrl, onUploaded, storagePath, label = 'Uplo
             </button>
           </>
         ) : (
-          <div className="flex flex-col items-center gap-2 text-brown/40 p-4">
+          <div className="flex flex-col items-center gap-2 text-brown/60 p-4">
             <Upload size={32} strokeWidth={1.5} />
             <p className="text-sm text-center">Klik atau drag gambar ke sini</p>
             <p className="text-xs">JPG, PNG · Maks 5MB</p>

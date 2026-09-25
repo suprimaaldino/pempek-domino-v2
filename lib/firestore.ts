@@ -124,12 +124,17 @@ export async function getAllProducts(): Promise<Product[]> {
 }
 
 export function subscribeToProducts(
-  callback: (products: Product[]) => void
+  callback: (products: Product[]) => void,
+  onError?: (error: Error) => void
 ): () => void {
   const q = query(collection(db, 'products'), orderBy('category'), orderBy('name'));
-  return onSnapshot(q, (snap: QuerySnapshot) => {
-    callback(snap.docs.map((d) => parseProduct(d.id, d.data())).filter(nonNull));
-  });
+  return onSnapshot(
+    q,
+    (snap: QuerySnapshot) => {
+      callback(snap.docs.map((d) => parseProduct(d.id, d.data())).filter(nonNull));
+    },
+    (err) => onError?.(err)
+  );
 }
 
 export async function createProduct(

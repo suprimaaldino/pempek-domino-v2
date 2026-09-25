@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Users } from 'lucide-react';
 import { getCustomers } from '@/lib/firestore';
 import { CustomerCard } from '@/components/admin/CustomerCard';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -45,13 +44,8 @@ export default function CustomersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brown/10 pb-6">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
-              <Users size={24} />
-            </div>
-            <h1 className="font-display font-bold text-3xl text-brown">Daftar Pelanggan</h1>
-          </div>
-          <p className="text-brown/50">Database pelanggan yang pernah memesan.</p>
+          <h1 className="font-display font-bold text-3xl text-brown">Daftar Pelanggan</h1>
+          <p className="text-brown/60">Database pelanggan yang pernah memesan.</p>
         </div>
       </div>
 

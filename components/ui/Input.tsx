@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useId } from 'react';
 import { cn } from '@/lib/utils';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -19,7 +19,8 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, helperText, leftIcon, rightIcon, className, id, ...props }, ref) => {
-    const inputId = id || props.name;
+    const autoId = useId();
+    const inputId = id || props.name || autoId;
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
@@ -29,7 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {leftIcon && (
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
               {leftIcon}
             </div>
           )}
@@ -38,7 +39,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             className={cn(
               'w-full rounded-input border bg-white px-4 py-3 text-sm text-neutral-900',
-              'placeholder:text-neutral-400 transition-all duration-150',
+              'placeholder:text-neutral-500 transition-all duration-150',
               'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary',
               error
                 ? 'border-error focus:ring-error/20 focus:border-error'
@@ -50,7 +51,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightIcon && (
-            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400">
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
               {rightIcon}
             </div>
           )}
@@ -61,7 +62,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           </p>
         )}
         {helperText && !error && (
-          <p className="text-xs text-neutral-400">{helperText}</p>
+          <p className="text-xs text-neutral-500">{helperText}</p>
         )}
       </div>
     );
@@ -71,7 +72,8 @@ Input.displayName = 'Input';
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ label, error, helperText, className, id, ...props }, ref) => {
-    const inputId = id || props.name;
+    const autoId = useId();
+    const inputId = id || props.name || autoId;
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
@@ -85,7 +87,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           rows={3}
           className={cn(
             'w-full rounded-input border bg-white px-4 py-3 text-sm text-neutral-900 resize-none',
-            'placeholder:text-neutral-400 transition-all duration-150',
+            'placeholder:text-neutral-500 transition-all duration-150',
             'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary',
             error
               ? 'border-error focus:ring-error/20 focus:border-error'
@@ -100,7 +102,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           </p>
         )}
         {helperText && !error && (
-          <p className="text-xs text-neutral-400">{helperText}</p>
+          <p className="text-xs text-neutral-500">{helperText}</p>
         )}
       </div>
     );

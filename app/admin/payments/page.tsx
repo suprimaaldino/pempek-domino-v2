@@ -42,7 +42,7 @@ function getMethodIcon(type: PaymentMethodType) {
     case 'dana': return <Smartphone size={20} className="text-blue-500" />;
     case 'bank':
     case 'transfer': return <Building2 size={20} className="text-green-600" />;
-    default: return <CreditCard size={20} className="text-brown/50" />;
+    default: return <CreditCard size={20} className="text-brown/60" />;
   }
 }
 
@@ -94,16 +94,20 @@ export default function PaymentsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const [form, setForm] = useState({ ...DEFAULT_FORM });
+  const [loadError, setLoadError] = useState('');
 
   // ─── Load data ──────────────────────────────────────────────────────────────
 
   const loadConfig = useCallback(async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const cfg = await getPaymentConfig();
       setConfig(cfg);
       setMethods(cfg?.methods ?? []);
     } catch {
+      // Keep the error visible — never fall through to the "no methods" empty state.
+      setLoadError('Gagal memuat konfigurasi pembayaran.');
       toastError('Gagal memuat konfigurasi pembayaran');
     } finally {
       setLoading(false);
@@ -229,13 +233,8 @@ export default function PaymentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brown/10 pb-6">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <CreditCard size={24} />
-            </div>
-            <h1 className="font-display font-bold text-3xl text-brown">Metode Pembayaran</h1>
-          </div>
-          <p className="text-brown/50">Kelola metode pembayaran yang tersedia untuk pelanggan.</p>
+          <h1 className="font-display font-bold text-3xl text-brown">Metode Pembayaran</h1>
+          <p className="text-brown/60">Kelola metode pembayaran yang tersedia untuk pelanggan.</p>
         </div>
         <Button onClick={openAdd} disabled={saving}>
           <Plus size={18} />
@@ -258,13 +257,21 @@ export default function PaymentsPage() {
       {/* List */}
       {loading ? (
         <SkeletonList count={3} />
+      ) : loadError ? (
+        <div
+          role="alert"
+          className="text-center py-12 px-4 bg-error/10 text-error rounded-card border border-error/20"
+        >
+          <p className="font-semibold mb-3">{loadError}</p>
+          <Button variant="outline" onClick={loadConfig}>Coba Lagi</Button>
+        </div>
       ) : methods.length === 0 ? (
         <div className="text-center py-16">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <CreditCard size={32} className="text-primary/50" />
           </div>
           <p className="text-brown/60 font-semibold text-lg mb-1">Belum ada metode pembayaran</p>
-          <p className="text-brown/40 text-sm mb-6">Tambahkan QRIS, E-Wallet, atau Bank Transfer.</p>
+          <p className="text-brown/60 text-sm mb-6">Tambahkan QRIS, E-Wallet, atau Bank Transfer.</p>
           <Button onClick={openAdd}>
             <Plus size={18} /> Tambah Metode Pertama
           </Button>
@@ -312,14 +319,14 @@ export default function PaymentsPage() {
                     <button
                       onClick={() => openEdit(method)}
                       aria-label="Edit"
-                      className="p-2 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-brown/40"
+                      className="p-2 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-brown/60"
                     >
                       <Edit2 size={16} />
                     </button>
                     <button
                       onClick={() => setDeleteId(method.id)}
                       aria-label="Hapus"
-                      className="p-2 rounded-lg hover:bg-error/10 hover:text-error transition-colors text-brown/40"
+                      className="p-2 rounded-lg hover:bg-error/10 hover:text-error transition-colors text-brown/60"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -339,7 +346,7 @@ export default function PaymentsPage() {
                             alt="QRIS"
                             className="w-16 h-16 object-contain rounded border border-brown/10"
                           />
-                          <span className="text-xs text-brown/50">Gambar QRIS tersimpan</span>
+                          <span className="text-xs text-brown/60">Gambar QRIS tersimpan</span>
                         </>
                       ) : (
                         <span className="text-xs text-error">Belum ada gambar QRIS</span>
@@ -349,17 +356,17 @@ export default function PaymentsPage() {
 
                   {(method.methodType === 'ewallet' || method.methodType === 'dana') && (
                     <>
-                      <p><span className="font-semibold text-brown/50">Provider:</span> {method.provider || '—'}</p>
-                      {method.accountName && <p><span className="font-semibold text-brown/50">Nama Akun:</span> {method.accountName}</p>}
-                      <p><span className="font-semibold text-brown/50">Nomor:</span> {method.accountNumber || '—'}</p>
+                      <p className="break-words"><span className="font-semibold text-brown/60">Provider:</span> {method.provider || '—'}</p>
+                      {method.accountName && <p className="break-words"><span className="font-semibold text-brown/60">Nama Akun:</span> {method.accountName}</p>}
+                      <p className="break-all"><span className="font-semibold text-brown/60">Nomor:</span> {method.accountNumber || '—'}</p>
                     </>
                   )}
 
                   {(method.methodType === 'bank' || method.methodType === 'transfer') && (
                     <>
-                      <p><span className="font-semibold text-brown/50">Bank:</span> {method.provider || '—'}</p>
-                      {method.accountName && <p><span className="font-semibold text-brown/50">Nama Rekening:</span> {method.accountName}</p>}
-                      <p><span className="font-semibold text-brown/50">No. Rekening:</span> {method.accountNumber || '—'}</p>
+                      <p className="break-words"><span className="font-semibold text-brown/60">Bank:</span> {method.provider || '—'}</p>
+                      {method.accountName && <p className="break-words"><span className="font-semibold text-brown/60">Nama Rekening:</span> {method.accountName}</p>}
+                      <p className="break-all"><span className="font-semibold text-brown/60">No. Rekening:</span> {method.accountNumber || '—'}</p>
                     </>
                   )}
                 </div>
@@ -370,7 +377,7 @@ export default function PaymentsPage() {
                     'w-2 h-2 rounded-full',
                     method.isActive ? 'bg-green-500' : 'bg-brown/20'
                   )} />
-                  <span className={cn('text-xs font-semibold', method.isActive ? 'text-green-600' : 'text-brown/40')}>
+                  <span className={cn('text-xs font-semibold', method.isActive ? 'text-green-600' : 'text-brown/60')}>
                     {method.isActive ? 'Aktif' : 'Nonaktif'}
                   </span>
                 </div>
@@ -518,7 +525,7 @@ export default function PaymentsPage() {
               <p className="text-sm font-semibold text-brown">
                 {form.isActive ? 'Aktif' : 'Nonaktif'}
               </p>
-              <p className="text-xs text-brown/50">
+              <p className="text-xs text-brown/60">
                 {form.isActive
                   ? 'Metode ini akan tampil di halaman pemesanan'
                   : 'Metode ini disembunyikan dari pelanggan'}

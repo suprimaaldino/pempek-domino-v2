@@ -50,14 +50,14 @@ export function BottomNav() {
                   strokeWidth={isActive ? 2.5 : 1.8}
                   className={cn(
                     'transition-colors duration-200',
-                    isActive ? 'text-primary' : 'text-neutral-400'
+                    isActive ? 'text-primary' : 'text-neutral-500'
                   )}
                 />
               </div>
               <span
                 className={cn(
                   'text-[10px] font-semibold transition-colors duration-200 leading-none',
-                  isActive ? 'text-primary' : 'text-neutral-400'
+                  isActive ? 'text-primary' : 'text-neutral-500'
                 )}
               >
                 {label}

@@ -58,9 +58,10 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', className
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
-  // Escape key + focus first focusable + focus trap
+  // Escape key + focus first focusable + focus trap + restore focus on close
   useEffect(() => {
     if (!isOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') handleClose();
     };
@@ -92,6 +93,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', className
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.removeEventListener('keydown', handleTab);
+      previouslyFocused?.focus?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, onClose]);

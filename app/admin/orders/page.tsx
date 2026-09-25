@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 import { Plus } from 'lucide-react';
-import Link from 'next/link';
 import { useAdminStore } from '@/store/adminStore';
 import { useOrders } from '@/hooks/useOrders';
 import { OrderCard } from '@/components/admin/OrderCard';
@@ -54,15 +53,13 @@ export default function OrdersListPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-display font-bold text-3xl text-brown">Daftar Pesanan</h1>
-          <p className="text-brown/50">Kelola semua pesanan masuk di sini.</p>
+          <p className="text-brown/60">Kelola semua pesanan masuk di sini.</p>
         </div>
-        <Link href="/order" target="_blank">
-          <Button>
-            <Plus size={18} />
-            <span className="hidden sm:inline">Pesanan Baru</span>
-            <span className="sm:hidden">Baru</span>
-          </Button>
-        </Link>
+        <Button onClick={() => window.open('/order', '_blank', 'noopener,noreferrer')}>
+          <Plus size={18} />
+          <span className="hidden sm:inline">Pesanan Baru</span>
+          <span className="sm:hidden">Baru</span>
+        </Button>
       </div>
 
       {/* Filters */}

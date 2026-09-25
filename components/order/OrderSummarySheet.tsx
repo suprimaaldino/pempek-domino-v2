@@ -33,7 +33,7 @@ export function OrderSummarySheet({ onSubmit, loading }: OrderSummarySheetProps)
 
           {/* Price summary */}
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-neutral-400 leading-none">
+            <p className="text-xs text-neutral-500 leading-none">
               {itemCount} item
               {deliveryFee > 0 && ` • Ongkir ${formatRupiah(deliveryFee)}`}
             </p>

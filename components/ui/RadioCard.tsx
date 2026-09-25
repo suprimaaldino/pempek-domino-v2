@@ -29,7 +29,7 @@ export function RadioCard({
       htmlFor={id}
       className={cn(
         'flex items-center gap-3 px-4 py-3.5 rounded-input border cursor-pointer',
-        'transition-all duration-150 select-none',
+        'transition-all duration-150 select-none focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-1',
         checked
           ? 'border-primary bg-primary/5 shadow-sm'
           : 'border-neutral-200 bg-white hover:border-neutral-300',
@@ -59,7 +59,7 @@ export function RadioCard({
       </div>
 
       {icon && (
-        <div className={cn('shrink-0', checked ? 'text-primary' : 'text-neutral-400')}>
+        <div className={cn('shrink-0', checked ? 'text-primary' : 'text-neutral-500')}>
           {icon}
         </div>
       )}
@@ -69,7 +69,7 @@ export function RadioCard({
           {label}
         </span>
         {description && (
-          <span className="text-xs text-neutral-400 block mt-0.5">{description}</span>
+          <span className="text-xs text-neutral-500 block mt-0.5">{description}</span>
         )}
       </div>
     </label>

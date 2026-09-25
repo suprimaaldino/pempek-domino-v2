@@ -122,7 +122,7 @@ export function MobileMoreSheet({ isOpen, onClose }: MobileMoreSheetProps) {
                     )}>
                       {label}
                     </p>
-                    <p className="text-sm text-brown/50">{description}</p>
+                    <p className="text-sm text-brown/60">{description}</p>
                   </div>
                 </Link>
               );
@@ -140,7 +140,7 @@ export function MobileMoreSheet({ isOpen, onClose }: MobileMoreSheetProps) {
               </div>
               <div className="flex-1 text-left">
                 <p className="font-semibold text-error">Keluar</p>
-                <p className="text-sm text-brown/50">Logout dari admin</p>
+                <p className="text-sm text-brown/60">Logout dari admin</p>
               </div>
             </button>
           </div>

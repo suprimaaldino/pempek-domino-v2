@@ -20,13 +20,20 @@ export function useProducts(activeOnly = true): UseProductsReturn {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = subscribeToProducts((allProducts) => {
-      const filtered = activeOnly
-        ? allProducts.filter((p) => p.isActive)
-        : allProducts;
-      setProducts(filtered);
-      setLoading(false);
-    });
+    const unsubscribe = subscribeToProducts(
+      (allProducts) => {
+        const filtered = activeOnly
+          ? allProducts.filter((p) => p.isActive)
+          : allProducts;
+        setProducts(filtered);
+        setError(null);
+        setLoading(false);
+      },
+      () => {
+        setError('Gagal memuat daftar menu.');
+        setLoading(false);
+      }
+    );
 
     return () => {
       unsubscribe();

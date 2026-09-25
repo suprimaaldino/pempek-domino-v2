@@ -1,10 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Settings as SettingsIcon, 
-  Save,
-} from 'lucide-react';
+import { Save } from 'lucide-react';
 import { 
   getBusinessSettings, 
   updateBusinessSettings, 
@@ -97,14 +94,9 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 animate-page-in">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-brown/10 pb-6">
-        <div className="p-2 rounded-lg bg-brown/5 text-brown">
-          <SettingsIcon size={24} />
-        </div>
-        <div>
-          <h1 className="font-display font-bold text-3xl text-brown">Pengaturan</h1>
-          <p className="text-brown/50">Kelola profil bisnis toko.</p>
-        </div>
+      <div className="border-b border-brown/10 pb-6">
+        <h1 className="font-display font-bold text-3xl text-brown">Pengaturan</h1>
+        <p className="text-brown/60">Kelola profil bisnis toko.</p>
       </div>
 
       {/* Error State */}

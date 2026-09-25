@@ -50,7 +50,7 @@ export function ProductCard({ product }: ProductCardProps) {
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <UtensilsCrossed size={24} className="text-neutral-300" />
+            <UtensilsCrossed size={24} className="text-neutral-500" />
           </div>
         )}
         {/* Quantity badge on top of image */}
@@ -70,7 +70,7 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.name}
           </p>
           {product.description && (
-            <p className="text-xs text-neutral-400 line-clamp-1 mt-0.5">{product.description}</p>
+            <p className="text-xs text-neutral-500 line-clamp-1 mt-0.5">{product.description}</p>
           )}
           <p className="text-sm font-bold text-primary mt-1">{formatRupiah(product.price)}</p>
         </div>

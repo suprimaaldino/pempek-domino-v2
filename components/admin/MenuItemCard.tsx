@@ -51,7 +51,7 @@ export function MenuItemCard({ product, onEdit, onDelete, onToggleActive }: Menu
         <button
           onClick={() => onToggleActive(product.id, !product.isActive)}
           aria-label={product.isActive ? 'Nonaktifkan produk' : 'Aktifkan produk'}
-          className="text-brown/50 hover:text-primary transition-colors"
+          className="text-brown/60 hover:text-primary transition-colors"
         >
           {product.isActive ? (
             <ToggleRight size={24} className="text-success" />

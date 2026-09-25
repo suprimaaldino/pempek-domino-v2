@@ -79,7 +79,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       <p className="flex-1 text-sm font-medium text-brown leading-snug">{toast.message}</p>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="ml-1 text-brown/40 hover:text-brown/70 transition-colors"
+        className="ml-1 text-brown/60 hover:text-brown/70 transition-colors"
         aria-label="Tutup notifikasi"
       >
         <X size={16} />

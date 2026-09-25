@@ -53,7 +53,7 @@ export default function AccountPage() {
   };
 
   return (
-    <main className="min-h-screen bg-neutral-50 pb-24 animate-page-in">
+    <main className="min-h-screen bg-neutral-50 pb-nav-safe animate-page-in">
       {/* Header */}
       <div className="bg-white border-b border-neutral-100 px-4 pt-safe-top pb-4">
         <div className="max-w-lg mx-auto pt-3">
@@ -67,7 +67,7 @@ export default function AccountPage() {
             </button>
             <div>
               <h1 className="font-bold text-neutral-900 text-base leading-tight">Akun Saya</h1>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-neutral-500">
                 Kelola informasi dan riwayat pesanan
               </p>
             </div>
@@ -78,7 +78,7 @@ export default function AccountPage() {
       <div className="max-w-lg mx-auto px-4 mt-6 space-y-4">
         {isLoading ? (
           <Card>
-            <CardBody className="text-center text-sm text-neutral-400 py-8">
+            <CardBody className="text-center text-sm text-neutral-500 py-8">
               Memuat...
             </CardBody>
           </Card>
@@ -91,7 +91,7 @@ export default function AccountPage() {
               </div>
               <div>
                 <p className="font-semibold text-neutral-900">Masuk untuk menyimpan pesananmu</p>
-                <p className="text-sm text-neutral-400 mt-1">
+                <p className="text-sm text-neutral-500 mt-1">
                   Masuk dengan Google untuk melihat riwayat pesanan di semua perangkat dan
                   mempercepat pemesanan berikutnya. (Opsional)
                 </p>
@@ -105,7 +105,7 @@ export default function AccountPage() {
                   Lanjut sebagai tamu
                 </Button>
               </div>
-              <p className="text-[11px] text-neutral-400 leading-relaxed">
+              <p className="text-[11px] text-neutral-500 leading-relaxed">
                 Kamu tetap bisa memesan tanpa membuat akun kapan saja.
               </p>
             </CardBody>
@@ -127,7 +127,7 @@ export default function AccountPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="font-bold text-neutral-900 truncate">{user.name || 'Pengguna'}</p>
-                    <p className="text-xs text-neutral-400 flex items-center gap-1">
+                    <p className="text-xs text-neutral-500 flex items-center gap-1">
                       <ShieldCheck size={12} className="text-primary" />
                       Masuk sebagai pelanggan
                     </p>

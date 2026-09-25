@@ -39,8 +39,8 @@ export const CardHeader = memo(function CardHeader({ title, subtitle, icon, acti
       <div className="flex items-center gap-2">
         {icon && <div className="text-primary">{icon}</div>}
         <div>
-          <h3 className="font-bold text-neutral-900 text-base leading-tight">{title}</h3>
-          {subtitle && <p className="text-sm text-neutral-400 mt-0.5">{subtitle}</p>}
+          <h2 className="font-bold text-neutral-900 text-base leading-tight">{title}</h2>
+          {subtitle && <p className="text-sm text-neutral-500 mt-0.5">{subtitle}</p>}
         </div>
       </div>
       {action && <div className="ml-2">{action}</div>}

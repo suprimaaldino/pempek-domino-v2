@@ -96,7 +96,7 @@ function OrderDetailCard({
             <OrderStatusBadge status={order.status} />
             <PaymentStatusBadge status={order.paymentStatus} />
           </div>
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-neutral-500">
             {order.createdAt ? formatDateId(order.createdAt) : '—'}
           </p>
           <p className="text-sm text-neutral-500 mt-0.5 truncate">
@@ -106,9 +106,9 @@ function OrderDetailCard({
         <div className="flex flex-col items-end gap-1 shrink-0">
           <p className="font-bold text-primary">{formatRupiah(order.total)}</p>
           {expanded ? (
-            <ChevronUp size={15} className="text-neutral-300" />
+            <ChevronUp size={15} className="text-neutral-500" />
           ) : (
-            <ChevronDown size={15} className="text-neutral-300" />
+            <ChevronDown size={15} className="text-neutral-500" />
           )}
         </div>
       </button>
@@ -118,7 +118,7 @@ function OrderDetailCard({
         <div className="px-4 pb-4 border-t border-neutral-100 space-y-4 pt-3">
           {/* Customer info */}
           <div className="bg-neutral-50 rounded-input px-3 py-2">
-            <p className="text-xs text-neutral-400 mb-0.5">Nama Pemesan</p>
+            <p className="text-xs text-neutral-500 mb-0.5">Nama Pemesan</p>
             <p className="text-sm font-semibold text-neutral-800">{order.customerName}</p>
           </div>
 
@@ -162,23 +162,23 @@ function OrderDetailCard({
 
           {/* Items */}
           <div className="space-y-1.5">
-            <p className="text-xs font-bold text-neutral-400 uppercase tracking-wide">Detail Pesanan</p>
+            <p className="text-xs font-bold text-neutral-500 uppercase tracking-wide">Detail Pesanan</p>
             {order.items.map((item, i) => (
               <div key={i} className="flex justify-between text-sm">
                 <span className="text-neutral-700">
                   {item.productName}{' '}
-                  <span className="text-neutral-400">x{item.quantity}</span>
+                  <span className="text-neutral-500">x{item.quantity}</span>
                 </span>
                 <span className="font-semibold text-neutral-800">{formatRupiah(item.subtotal)}</span>
               </div>
             ))}
             <div className="border-t border-neutral-100 pt-2 mt-1 space-y-0.5">
-              <div className="flex justify-between text-xs text-neutral-400">
+              <div className="flex justify-between text-xs text-neutral-500">
                 <span>Subtotal</span>
                 <span>{formatRupiah(order.subtotal)}</span>
               </div>
               {order.deliveryFee > 0 && (
-                <div className="flex justify-between text-xs text-neutral-400">
+                <div className="flex justify-between text-xs text-neutral-500">
                   <span>Ongkir</span>
                   <span>{formatRupiah(order.deliveryFee)}</span>
                 </div>
@@ -193,7 +193,7 @@ function OrderDetailCard({
           {/* Notes */}
           {order.notes && (
             <div className="bg-brown/5 rounded-input px-3 py-2">
-              <p className="text-xs text-brown/50 mb-0.5">Catatan</p>
+              <p className="text-xs text-brown/60 mb-0.5">Catatan</p>
               <p className="text-sm text-brown">{order.notes}</p>
             </div>
           )}
@@ -201,7 +201,7 @@ function OrderDetailCard({
           {/* Payment proof */}
           {order.paymentProofUrl && (
             <div>
-              <p className="text-xs font-bold text-brown/40 uppercase tracking-wide mb-2">Bukti Pembayaran</p>
+              <p className="text-xs font-bold text-brown/60 uppercase tracking-wide mb-2">Bukti Pembayaran</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={order.paymentProofUrl}
@@ -257,14 +257,17 @@ export default function MyOrdersPage() {
   const isAuthed = useAuthStore((s) => s.isAuthenticated);
   const [myOrders, setMyOrders] = useState<Order[]>([]);
   const [myOrdersLoading, setMyOrdersLoading] = useState(false);
+  const [myOrdersError, setMyOrdersError] = useState('');
 
   useEffect(() => {
     let active = true;
     if (!isAuthed) {
       setMyOrders([]);
+      setMyOrdersError('');
       return;
     }
     setMyOrdersLoading(true);
+    setMyOrdersError('');
     (async () => {
       try {
         const token = await getFirebaseToken();
@@ -272,12 +275,12 @@ export default function MyOrdersPage() {
         const response = await fetch('/api/my-orders', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (response.ok) {
-          const data = await response.json();
-          if (active) setMyOrders((data.orders ?? []) as Order[]);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (active) setMyOrders((data.orders ?? []) as Order[]);
       } catch {
-        // Non-fatal — guest flow still works if this fails.
+        // Guest lookup still works, but never claim "no orders" on a failed load.
+        if (active) setMyOrdersError('Gagal memuat riwayat pesanan. Periksa koneksi internet kamu.');
       } finally {
         if (active) setMyOrdersLoading(false);
       }
@@ -343,7 +346,7 @@ export default function MyOrdersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-50 pb-24 animate-page-in">
+    <main className="min-h-screen bg-neutral-50 pb-nav-safe animate-page-in">
       {/* Header */}
       <div className="bg-white border-b border-neutral-100 px-4 pt-safe-top pb-4">
         <div className="max-w-lg mx-auto pt-3">
@@ -357,7 +360,7 @@ export default function MyOrdersPage() {
             </button>
             <div>
               <h1 className="font-bold text-neutral-900 text-base leading-tight">Cek Pesanan</h1>
-              <p className="text-xs text-neutral-400">Masukkan nomor pesanan</p>
+              <p className="text-xs text-neutral-500">Masukkan nomor pesanan</p>
             </div>
           </div>
         </div>
@@ -366,8 +369,8 @@ export default function MyOrdersPage() {
       <div className="max-w-lg mx-auto px-4 mt-6">
         {/* Security notice */}
         <div className="flex items-start gap-2 bg-white border border-neutral-100 rounded-card px-3 py-2.5 mb-4 shadow-card">
-          <ShieldAlert size={14} className="text-neutral-300 shrink-0 mt-0.5" />
-          <p className="text-xs text-neutral-400 leading-relaxed">
+          <ShieldAlert size={14} className="text-neutral-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-neutral-500 leading-relaxed">
             Hanya pemesan yang tahu nomor pesanannya yang bisa melihat detail pesanan ini.
           </p>
         </div>
@@ -375,13 +378,20 @@ export default function MyOrdersPage() {
         {/* Account-scoped order history (authenticated users only) */}
         {isAuthed && (
           <div className="mb-6">
-            <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-2">
+            <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
               Riwayat Pesanan Saya
-            </p>
+            </h2>
             {myOrdersLoading ? (
               <div className="space-y-3">
                 <SkeletonCard />
                 <SkeletonCard />
+              </div>
+            ) : myOrdersError ? (
+              <div
+                role="alert"
+                className="text-center py-6 px-4 text-sm text-error bg-error/10 rounded-card border border-error/20"
+              >
+                {myOrdersError}
               </div>
             ) : myOrders.length > 0 ? (
               <div className="space-y-3">
@@ -392,7 +402,7 @@ export default function MyOrdersPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6 text-neutral-400 text-sm bg-white rounded-card border border-neutral-100 shadow-card">
+              <div className="text-center py-6 text-neutral-500 text-sm bg-white rounded-card border border-neutral-100 shadow-card">
                 Belum ada pesanan pada akun ini.
               </div>
             )}
@@ -433,10 +443,10 @@ export default function MyOrdersPage() {
         {order === null && !loading && (
           <div className="text-center py-14">
             <div className="w-14 h-14 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
-              <PackageSearch size={28} className="text-neutral-300" />
+              <PackageSearch size={28} className="text-neutral-500" />
             </div>
             <p className="text-neutral-800 font-semibold mb-1">Pesanan tidak ditemukan</p>
-            <p className="text-neutral-400 text-sm">
+            <p className="text-neutral-500 text-sm">
               Pastikan nomor pesanan yang kamu masukkan sudah benar
             </p>
             <Button
@@ -459,7 +469,7 @@ export default function MyOrdersPage() {
         {/* Saved orders from localStorage */}
         {savedOrders.length > 0 && !order && !loading && (
           <div className="mt-4">
-            <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-2">Pesanan Tersimpan</p>
+            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Pesanan Tersimpan</p>
             <div className="flex flex-wrap gap-2">
               {savedOrders.map((saved) => (
                 <button
@@ -468,7 +478,7 @@ export default function MyOrdersPage() {
                   className="bg-white border border-neutral-200 rounded-card px-3 py-2 text-left hover:border-primary/30 hover:bg-primary/5 transition-all shadow-sm"
                 >
                   <p className="font-mono text-xs font-bold text-primary">{saved.orderNumber}</p>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">{saved.customerName}</p>
+                  <p className="text-[11px] text-neutral-500 mt-0.5">{saved.customerName}</p>
                 </button>
               ))}
             </div>
@@ -477,10 +487,10 @@ export default function MyOrdersPage() {
 
         {/* CTA sebelum search */}
         {order === undefined && !loading && savedOrders.length === 0 && (
-          <div className="text-center py-10 text-neutral-400">
+          <div className="text-center py-10 text-neutral-500">
             <ClipboardList size={36} className="mx-auto mb-3 opacity-20" />
             <p className="text-sm font-medium">Masukkan nomor pesanan untuk melihat statusnya</p>
-            <p className="text-xs mt-1 text-neutral-300">
+            <p className="text-xs mt-1 text-neutral-500">
               Nomor pesanan tersedia di halaman konfirmasi (contoh: PD-20260825-001-X7K9)
             </p>
           </div>

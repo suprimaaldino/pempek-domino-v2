@@ -67,7 +67,7 @@ export default function AdminLoginPage() {
             />
           </div>
           <h1 className="font-display font-bold text-2xl text-brown">Pempek Domino</h1>
-          <p className="text-brown/50 text-sm">Masuk ke Panel Admin</p>
+          <p className="text-brown/60 text-sm">Masuk ke Panel Admin</p>
         </div>
 
         <Card>
@@ -117,7 +117,7 @@ export default function AdminLoginPage() {
           </Link>
         </div>
 
-        <p className="text-center text-xs text-brown/40 mt-8">
+        <p className="text-center text-xs text-brown/60 mt-8">
           &copy; {new Date().getFullYear()} Pempek Domino. All rights reserved.
         </p>
       </div>
