@@ -6,7 +6,7 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getStorage, Storage } from 'firebase-admin/storage';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { getAuth, Auth } from 'firebase-admin/auth';
+import type { Auth } from 'firebase-admin/auth';
 
 let app: App | null = null;
 let storage: Storage | null = null;
@@ -41,8 +41,16 @@ export function getAdminDb(): Firestore {
   return db;
 }
 
-export function getAdminAuth(): Auth {
-  if (!auth) auth = getAuth(getApp());
+/**
+ * Loaded on demand, never at module scope: the auth entry point eagerly pulls
+ * jwks-rsa → jose (ESM-only), which throws ERR_REQUIRE_ESM on runtimes without
+ * require(esm) (Vercel's Rust Node runtime) and would break every route.
+ */
+export async function getAdminAuth(): Promise<Auth> {
+  if (!auth) {
+    const { getAuth } = await import('firebase-admin/auth');
+    auth = getAuth(getApp());
+  }
   return auth;
 }
 
@@ -80,7 +88,6 @@ function adminProxy<T extends object>(factory: () => T): T {
 }
 
 export const adminDb = adminProxy<Firestore>(() => getAdminDb());
-export const adminAuth = adminProxy<Auth>(() => getAdminAuth());
 export const adminStorage = adminProxy<Storage>(() => getAdminStorage());
 
 export default getApp;

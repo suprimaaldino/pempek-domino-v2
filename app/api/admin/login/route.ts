@@ -74,11 +74,12 @@ export async function POST(req: NextRequest) {
     // Sign in with Firebase Auth + stamp admin custom claim for Firestore rules
     try {
       // Dynamic imports: avoid loading Firebase SDKs at build/collect time
-      const [{ signInWithEmailAndPassword }, { auth }, { adminAuth }] = await Promise.all([
+      const [{ signInWithEmailAndPassword }, { auth }, { getAdminAuth }] = await Promise.all([
         import('firebase/auth'),
         import('@/lib/firebase'),
         import('@/lib/firebase-admin'),
       ]);
+      const adminAuth = await getAdminAuth();
       const userCredential = await signInWithEmailAndPassword(auth, adminEmail, password);
 
       // Custom claim `admin: true` → required by firestore.rules isAdmin()
