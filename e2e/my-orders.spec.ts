@@ -122,14 +122,17 @@ test.describe('order tracking', () => {
       });
     });
 
-    page.on('dialog', (dialog) => dialog.accept());
-
     await page.goto('/my-orders');
     await page.getByLabel('Nomor Pesanan').fill(ORDER_NUMBER);
     await page.getByRole('button', { name: 'Cek Pesanan' }).click();
     await expect(page.getByText('Pempek Kapal Selam').first()).toBeVisible();
 
+    // In-app confirmation replaces the native window.confirm.
     await page.getByRole('button', { name: /Batalkan/ }).first().click();
+    await expect(page.getByRole('dialog', { name: 'Batalkan pesanan ini?' })).toBeVisible();
+    // The phone was already recorded, so no input is requested.
+    await expect(page.getByLabel('Nomor WhatsApp')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Ya, Batalkan' }).click();
 
     // The ownership proof must actually reach the server.
     await expect.poll(() => cancelBody).not.toBeNull();
@@ -172,14 +175,13 @@ test.describe('order tracking', () => {
       })
     );
 
-    page.on('dialog', (dialog) => dialog.accept());
-
     await page.goto('/my-orders');
     await page.getByLabel('Nomor Pesanan').fill(ORDER_NUMBER);
     await page.getByRole('button', { name: 'Cek Pesanan' }).click();
     await expect(page.getByText('Pempek Kapal Selam').first()).toBeVisible();
 
     await page.getByRole('button', { name: /Batalkan/ }).first().click();
+    await page.getByRole('button', { name: 'Ya, Batalkan' }).click();
 
     await expect(
       page.getByText('Nomor pesanan atau nomor WhatsApp tidak sesuai.')
@@ -189,7 +191,6 @@ test.describe('order tracking', () => {
   test('asks for the WhatsApp number when this device has no record', async ({
     page,
   }) => {
-    let prompted = false;
     let cancelBody: Record<string, unknown> | null = null;
 
     await page.route(`**/api/order/${ORDER_NUMBER}`, (route) =>
@@ -208,15 +209,6 @@ test.describe('order tracking', () => {
       });
     });
 
-    page.on('dialog', async (dialog) => {
-      if (dialog.type() === 'prompt') {
-        prompted = true;
-        await dialog.accept('08123456789');
-      } else {
-        await dialog.accept();
-      }
-    });
-
     await page.goto('/my-orders');
     await page.getByLabel('Nomor Pesanan').fill(ORDER_NUMBER);
     await page.getByRole('button', { name: 'Cek Pesanan' }).click();
@@ -224,9 +216,102 @@ test.describe('order tracking', () => {
 
     await page.getByRole('button', { name: /Batalkan/ }).first().click();
 
+    // No saved number on this device, so the dialog collects it inline
+    // instead of falling back to a native prompt.
+    const phoneField = page.getByLabel('Nomor WhatsApp');
+    await expect(phoneField).toBeVisible();
+
+    // Confirm stays disabled until something is typed.
+    await expect(page.getByRole('button', { name: 'Ya, Batalkan' })).toBeDisabled();
+    await phoneField.fill('08123456789');
+    await expect(page.getByRole('button', { name: 'Ya, Batalkan' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Ya, Batalkan' }).click();
+
     await expect.poll(() => cancelBody).not.toBeNull();
-    expect(prompted).toBe(true);
-    // Whatever the customer typed is sent through for server-side comparison.
     expect(cancelBody).toEqual({ whatsappNumber: '08123456789' });
+  });
+
+  // ─── Cancellation is only possible while the order is pending ──────────
+
+  const PROCESSED_STATUSES = ['ready', 'completed', 'delivered', 'cancelled'];
+
+  for (const status of PROCESSED_STATUSES) {
+    test(`offers no cancel action for a "${status}" order`, async ({ page }) => {
+      await page.route(`**/api/order/${ORDER_NUMBER}`, (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(orderPayload({ status })),
+        })
+      );
+
+      await page.goto('/my-orders');
+      await page.getByLabel('Nomor Pesanan').fill(ORDER_NUMBER);
+      await page.getByRole('button', { name: 'Cek Pesanan' }).click();
+
+      await expect(page.getByText(ORDER_NUMBER)).toBeVisible();
+      // The destructive action is simply not rendered.
+      await expect(page.getByRole('button', { name: /Batalkan Pesanan/ })).toHaveCount(0);
+    });
+  }
+
+  test('offers the cancel action for a pending order', async ({ page }) => {
+    await page.route(`**/api/order/${ORDER_NUMBER}`, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(orderPayload({ status: 'pending' })),
+      })
+    );
+
+    await page.goto('/my-orders');
+    await page.getByLabel('Nomor Pesanan').fill(ORDER_NUMBER);
+    await page.getByRole('button', { name: 'Cek Pesanan' }).click();
+
+    await expect(page.getByRole('button', { name: /Batalkan Pesanan/ })).toBeVisible();
+  });
+
+  test('dismissing the confirmation does not cancel anything', async ({ page }) => {
+    let cancelCalls = 0;
+    await page.addInitScript(
+      (args: string[]) => window.localStorage.setItem(args[0], args[1]),
+      [
+        'pempek-domino-orders',
+        JSON.stringify([
+          {
+            orderNumber: ORDER_NUMBER,
+            orderId: 'doc-1',
+            customerName: 'Budi Santoso',
+            whatsappNumber: PHONE,
+          },
+        ]),
+      ]
+    );
+    await page.route(`**/api/order/${ORDER_NUMBER}`, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(orderPayload()),
+      })
+    );
+    await page.route(`**/api/order/${ORDER_NUMBER}/cancel`, async (route) => {
+      cancelCalls++;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      });
+    });
+
+    await page.goto('/my-orders');
+    await page.getByLabel('Nomor Pesanan').fill(ORDER_NUMBER);
+    await page.getByRole('button', { name: 'Cek Pesanan' }).click();
+    await page.getByRole('button', { name: /Batalkan/ }).first().click();
+
+    await expect(page.getByRole('dialog', { name: 'Batalkan pesanan ini?' })).toBeVisible();
+    await page.getByRole('button', { name: 'Tidak' }).click();
+
+    await expect(page.getByRole('dialog', { name: 'Batalkan pesanan ini?' })).toBeHidden();
+    expect(cancelCalls).toBe(0);
   });
 });

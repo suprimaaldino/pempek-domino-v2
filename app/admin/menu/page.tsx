@@ -16,6 +16,7 @@ import { CATEGORY_LABELS } from '@/lib/utils';
 import { MenuItemCard } from '@/components/admin/MenuItemCard';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Input, Textarea } from '@/components/ui/Input';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import { useToast } from '@/components/ui/Toast';
@@ -111,13 +112,20 @@ export default function MenuManagementPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Hapus menu ini secara permanen?')) return;
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!pendingDeleteId) return;
+    setDeleting(true);
     try {
-      await deleteProduct(id);
+      await deleteProduct(pendingDeleteId);
       toastSuccess('Menu berhasil dihapus');
+      setPendingDeleteId(null);
     } catch {
       toastError('Gagal menghapus menu');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -167,7 +175,7 @@ export default function MenuManagementPage() {
                       key={product.id} 
                       product={product} 
                       onEdit={openModal}
-                      onDelete={handleDelete}
+                      onDelete={setPendingDeleteId}
                       onToggleActive={handleToggle}
                     />
                   ))}
@@ -182,6 +190,19 @@ export default function MenuManagementPage() {
           action={<Button onClick={() => openModal()}><Plus size={18} /> Buat Menu Pertama</Button>}
         />
       )}
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        isOpen={pendingDeleteId !== null}
+        title="Hapus menu ini?"
+        description="Menu akan dihapus permanen dari daftar dan tidak bisa dikembalikan."
+        variant="danger"
+        confirmLabel="Ya, Hapus"
+        cancelLabel="Tidak"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setPendingDeleteId(null)}
+      />
 
       {/* Form Modal */}
       <Modal 

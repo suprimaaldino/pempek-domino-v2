@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle2, MessageCircle, RefreshCcw, Truck, MapPin, Clock, ClipboardList, Copy, Check, XCircle } from 'lucide-react';
 import { getBusinessSettings } from '@/lib/firestore';
-import { saveSavedOrder } from '@/lib/saved-orders';
-import { cancelOrderAsGuest } from '@/lib/cancel-order';
+import { saveSavedOrder, getSavedPhone } from '@/lib/saved-orders';
+import { cancelOrderAsGuest, canCancelOrder } from '@/lib/cancel-order';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { formatRupiah, formatDateId, formatWhatsApp, generateWhatsAppLink, PAYMENT_METHOD_LABELS, DELIVERY_METHOD_LABELS } from '@/lib/utils';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
 import { SkeletonCard } from '@/components/ui/Skeleton';
@@ -31,6 +32,8 @@ export default function ConfirmationPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [askPhone, setAskPhone] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -109,11 +112,13 @@ export default function ConfirmationPage() {
     }
   };
 
-  const handleCancel = async () => {
-    if (!order || !window.confirm('Yakin ingin membatalkan pesanan ini?')) return;
+  const handleCancel = async (phone?: string) => {
+    if (!order) return;
     setCancelling(true);
     try {
-      await cancelOrderAsGuest(order.orderNumber);
+      await cancelOrderAsGuest(order.orderNumber, phone);
+      setConfirmOpen(false);
+      setAskPhone(false);
       setOrder({ ...order, status: 'cancelled' });
       toastSuccess('Pesanan berhasil dibatalkan');
     } catch (err) {
@@ -121,6 +126,17 @@ export default function ConfirmationPage() {
     } finally {
       setCancelling(false);
     }
+  };
+
+  const openCancelDialog = () => {
+    // This device usually recorded the number when the order was placed.
+    setAskPhone(!getSavedPhone(order?.orderNumber ?? ''));
+    setConfirmOpen(true);
+  };
+
+  const closeCancelDialog = () => {
+    setConfirmOpen(false);
+    setAskPhone(false);
   };
 
   const buildWhatsAppMessage = (ord: Order): string => {
@@ -337,15 +353,14 @@ export default function ConfirmationPage() {
           </div>
         )}
 
-        {/* Cancel order (only for pending orders) */}
-        {order.status === 'pending' && (
+        {/* Cancel order — only while still pending */}
+        {canCancelOrder(order) && (
           <div className="flex flex-col gap-2">
             <Button
               variant="danger"
               size="lg"
               className="w-full"
-              onClick={handleCancel}
-              loading={cancelling}
+              onClick={openCancelDialog}
             >
               <XCircle size={18} />
               Batalkan Pesanan
@@ -391,6 +406,31 @@ export default function ConfirmationPage() {
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        title="Batalkan pesanan ini?"
+        description={
+          askPhone
+            ? 'Masukkan nomor WhatsApp yang Anda gunakan saat memesan untuk memverifikasi kepemilikan pesanan.'
+            : 'Pesanan yang sudah diproses tidak dapat dibatalkan lagi. Tindakan ini tidak bisa dibatalkan.'
+        }
+        variant="danger"
+        confirmLabel="Ya, Batalkan"
+        cancelLabel="Tidak"
+        loading={cancelling}
+        input={
+          askPhone
+            ? {
+                label: 'Nomor WhatsApp',
+                placeholder: '081234567890',
+                helperText: 'Sesuai dengan nomor yang Anda pakai saat memesan',
+              }
+            : undefined
+        }
+        onConfirm={handleCancel}
+        onCancel={closeCancelDialog}
+      />
     </main>
   );
 }

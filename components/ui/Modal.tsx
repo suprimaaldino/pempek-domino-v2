@@ -9,6 +9,8 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
+  /** Accessible name for the dialog when the content renders its own heading. */
+  ariaLabel?: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'full';
   className?: string;
@@ -21,7 +23,7 @@ const sizeClasses = {
   full: 'max-w-full mx-4',
 };
 
-export function Modal({ isOpen, onClose, title, children, size = 'md', className }: ModalProps) {
+export function Modal({ isOpen, onClose, title, ariaLabel, children, size = 'md', className }: ModalProps) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -39,13 +41,22 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', className
     }
   }, [isOpen]);
 
-  // Close with exit animation
+  // Exit animation + unmount.
+  //
+  // Unmounting is driven by `isOpen` rather than by handleClose, because a
+  // consumer may also close the dialog by flipping `isOpen` directly from its
+  // own buttons (e.g. after a successful save). Driving it from handleClose
+  // alone would leave the dialog mounted forever in that case.
+  useEffect(() => {
+    if (isOpen || !mounted) return;
+    setVisible(false);
+    const timer = setTimeout(() => setMounted(false), 150);
+    return () => clearTimeout(timer);
+  }, [isOpen, mounted]);
+
   const handleClose = () => {
     setVisible(false);
-    setTimeout(() => {
-      setMounted(false);
-      onClose();
-    }, 150);
+    onClose();
   };
 
   // Lock body scroll
@@ -105,7 +116,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', className
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       role="dialog"
       aria-modal="true"
-      aria-label={title}
+      aria-label={title ?? ariaLabel}
     >
       {/* Backdrop */}
       <div

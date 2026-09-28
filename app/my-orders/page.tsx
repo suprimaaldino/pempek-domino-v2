@@ -17,9 +17,10 @@ import {
 } from 'lucide-react';
 import { getBusinessSettings } from '@/lib/firestore';
 import { getFirebaseToken } from '@/lib/auth';
-import { getSavedOrders, removeSavedOrder } from '@/lib/saved-orders';
+import { getSavedOrders, removeSavedOrder, getSavedPhone } from '@/lib/saved-orders';
 import type { SavedOrder } from '@/lib/saved-orders';
-import { cancelOrderAsGuest } from '@/lib/cancel-order';
+import { cancelOrderAsGuest, canCancelOrder } from '@/lib/cancel-order';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { useAuthStore } from '@/store/authStore';
 import { Input } from '@/components/ui/Input';
@@ -44,13 +45,32 @@ function OrderDetailCard({
 }) {
   const [expanded, setExpanded] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [askPhone, setAskPhone] = useState(false);
   const { error: toastError, success: toastSuccess } = useToast();
 
-  const handleCancel = async () => {
-    if (!window.confirm('Yakin ingin membatalkan pesanan ini?')) return;
+  // Only a pending order can be cancelled. Everything else is either already
+  // being processed or a terminal state.
+  const cancellable = canCancelOrder(order);
+
+  const openCancelDialog = () => {
+    // This device usually recorded the number when the order was placed; only
+    // ask for it when the record is missing (e.g. a different device).
+    const needsPhone = !getSavedPhone(order.orderNumber);
+    setAskPhone(needsPhone);
+    setConfirmOpen(true);
+  };
+
+  const closeCancelDialog = () => {
+    setConfirmOpen(false);
+    setAskPhone(false);
+  };
+
+  const handleCancel = async (phone?: string) => {
     setCancelling(true);
     try {
-      await cancelOrderAsGuest(order.orderNumber);
+      await cancelOrderAsGuest(order.orderNumber, phone);
+      closeCancelDialog();
       toastSuccess('Pesanan berhasil dibatalkan');
       onCancelled?.();
     } catch (err) {
@@ -205,15 +225,14 @@ function OrderDetailCard({
             </div>
           )}
 
-          {/* Cancel order (only for pending) */}
-          {order.status === 'pending' && (
+          {/* Cancel order — only while still pending */}
+          {cancellable && (
             <div className="pt-2">
               <Button
                 variant="danger"
                 size="sm"
                 className="w-full"
-                onClick={handleCancel}
-                loading={cancelling}
+                onClick={openCancelDialog}
               >
                 <XCircle size={15} />
                 Batalkan Pesanan
@@ -222,6 +241,31 @@ function OrderDetailCard({
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        title="Batalkan pesanan ini?"
+        description={
+          askPhone
+            ? 'Masukkan nomor WhatsApp yang Anda gunakan saat memesan untuk memverifikasi kepemilikan pesanan.'
+            : 'Pesanan yang sudah diproses tidak dapat dibatalkan lagi. Tindakan ini tidak bisa dibatalkan.'
+        }
+        variant="danger"
+        confirmLabel="Ya, Batalkan"
+        cancelLabel="Tidak"
+        loading={cancelling}
+        input={
+          askPhone
+            ? {
+                label: 'Nomor WhatsApp',
+                placeholder: '081234567890',
+                helperText: 'Sesuai dengan nomor yang Anda pakai saat memesan',
+              }
+            : undefined
+        }
+        onConfirm={handleCancel}
+        onCancel={closeCancelDialog}
+      />
     </div>
   );
 }
