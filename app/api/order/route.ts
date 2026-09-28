@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase-admin';
 import { getUidFromToken } from '@/lib/server-auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { normalizePhone } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { ProductCategory, DeliveryMethod, PaymentMethod } from '@/types';
@@ -39,15 +40,46 @@ const MAX_ITEMS = 100;
 const MAX_QTY = 1000;
 const MAX_DELIVERY_FEE = 1_000_000;
 const MAX_TOTAL = 100_000_000;
+/** Firestore doc ids may not contain `/` and are capped at 1500 bytes. */
+const PRODUCT_ID_PATTERN = /^[A-Za-z0-9_-]{1,150}$/;
+
+// Order creation is the only mutating public route without a limit. Generous
+// enough for shared IPs (carrier NAT, office wifi) but stops order-spam /
+// Firestore cost amplification.
+const MAX_CREATE = 10;
+const CREATE_WINDOW_MS = 5 * 60 * 1000;
+const CREATE_BUCKET = 'order-create';
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const { protocol } = new URL(value);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
 /**
  * POST /api/order
  * Server-authoritative order creation:
  * - Prices/totals recomputed from catalog (never trusted from client).
  * - Validates all money fields server-side.
+ * - Rate limited per IP.
  * - Optional Authorization: Bearer <firebase id token> stamps userId/userEmail.
  */
 export async function POST(req: NextRequest) {
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0] ||
+    req.headers.get('x-real-ip') ||
+    'unknown';
+
+  if (!checkRateLimit(CREATE_BUCKET, ip, MAX_CREATE, CREATE_WINDOW_MS).allowed) {
+    return NextResponse.json(
+      { error: 'Terlalu banyak permintaan. Coba lagi sebentar.' },
+      { status: 429, headers: { 'Retry-After': '300' } }
+    );
+  }
+
   try {
     const body = (await req.json()) as CreateOrderBody;
 
@@ -76,6 +108,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Metode pengiriman tidak valid.' }, { status: 400 });
     }
 
+    // Optional payment proof: must be an absolute http(s) URL so the stored
+    // value can never become a `javascript:`/data: reference when rendered.
+    if (body.paymentProofUrl && !isHttpUrl(String(body.paymentProofUrl))) {
+      return NextResponse.json({ error: 'Bukti pembayaran tidak valid.' }, { status: 400 });
+    }
+
     // Optional identity for ownership stamping
     let userId: string | null = null;
     let userEmail: string | null = null;
@@ -91,8 +129,12 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Load catalog & recompute money ──────────────────────────────────
-    const productIds = Array.from(new Set(body.items.map((i) => i.productId)));
-    if (productIds.length === 0 || productIds.length > MAX_ITEMS) {
+    const productIds = Array.from(new Set(body.items.map((i) => i?.productId)));
+    if (
+      productIds.length === 0 ||
+      productIds.length > MAX_ITEMS ||
+      productIds.some((id) => typeof id !== 'string' || !PRODUCT_ID_PATTERN.test(id))
+    ) {
       return NextResponse.json({ error: 'Item pesanan tidak valid.' }, { status: 400 });
     }
 
@@ -163,6 +205,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Total pesanan tidak valid.' }, { status: 400 });
     }
 
+    // ── Delivery address (validated before the counter is consumed) ─────
+    const deliveryAddress: string | null =
+      body.deliveryMethod === 'delivery'
+        ? String(body.deliveryAddress ?? '').slice(0, 500)
+        : null;
+    if (deliveryAddress !== null && deliveryAddress.length < 5) {
+      return NextResponse.json({ error: 'Alamat pengiriman tidak valid.' }, { status: 400 });
+    }
+
     // ── Order number (transaction on counters/{yyyyMMdd}) ───────────────
     const today = format(new Date(), 'yyyyMMdd');
     const counterRef = adminDb.collection('counters').doc(today);
@@ -177,14 +228,6 @@ export async function POST(req: NextRequest) {
 
     // ── Persist order + lookup ──────────────────────────────────────────
     const now = FieldValue.serverTimestamp();
-    const deliveryAddress: string | null =
-      body.deliveryMethod === 'delivery'
-        ? String(body.deliveryAddress ?? '').slice(0, 500)
-        : null;
-    if (deliveryAddress !== null && deliveryAddress.length < 5) {
-      return NextResponse.json({ error: 'Alamat pengiriman tidak valid.' }, { status: 400 });
-    }
-
     const orderDoc = {
       orderNumber,
       customerName,

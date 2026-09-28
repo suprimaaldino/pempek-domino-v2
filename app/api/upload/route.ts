@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminStorage } from '@/lib/firebase-admin';
 import { verifyAdminToken } from '@/lib/server-auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -10,23 +11,10 @@ const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const ADMIN_ONLY_PATHS = ['products', 'qris'];
 const ALLOWED_PATHS = ['payment-proofs', 'products', 'qris'];
 
-// Lightweight in-memory rate limit for anonymous payment-proof uploads
-// (resets on cold start — defense-in-depth only).
-const uploadAttempts = new Map<string, { count: number; resetTime: number }>();
+// Anonymous payment-proof uploads are throttled per IP.
 const MAX_UPLOADS = 10;
-const WINDOW_MS = 60 * 1000;
-
-function checkUploadRateLimit(key: string): boolean {
-  const now = Date.now();
-  const record = uploadAttempts.get(key);
-  if (!record || now > record.resetTime) {
-    uploadAttempts.set(key, { count: 1, resetTime: now + WINDOW_MS });
-    return true;
-  }
-  if (record.count >= MAX_UPLOADS) return false;
-  record.count++;
-  return true;
-}
+const UPLOAD_WINDOW_MS = 60 * 1000;
+const UPLOAD_BUCKET = 'upload';
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,7 +40,7 @@ export async function POST(req: NextRequest) {
         req.headers.get('x-forwarded-for')?.split(',')[0] ||
         req.headers.get('x-real-ip') ||
         'unknown';
-      if (!checkUploadRateLimit(ip)) {
+      if (!checkRateLimit(UPLOAD_BUCKET, ip, MAX_UPLOADS, UPLOAD_WINDOW_MS).allowed) {
         return NextResponse.json(
           { error: 'Terlalu banyak permintaan. Coba lagi sebentar.' },
           { status: 429, headers: { 'Retry-After': '60' } }

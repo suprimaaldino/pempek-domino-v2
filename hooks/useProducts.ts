@@ -40,15 +40,18 @@ export function useProducts(activeOnly = true): UseProductsReturn {
     };
   }, [activeOnly]);
 
+  // Sort by price for a stable, cheapest-first menu.
   const sortedProducts = [...products].sort((a, b) => a.price - b.price);
 
-  const grouped: GroupedProducts = {
-    kecil: sortedProducts.filter((p) => p.category === 'kecil'),
-    paket: sortedProducts.filter((p) => p.category === 'paket'),
-    sup_kuah: sortedProducts.filter((p) => p.category === 'sup_kuah'),
-    minuman: sortedProducts.filter((p) => p.category === 'minuman'),
-    lainnya: sortedProducts.filter((p) => p.category === 'lainnya'),
-  };
+  // Group off the canonical list. `resolveProductCategory` is applied at the
+  // parse boundary in lib/firestore, but repeat it here so a Product injected
+  // from anywhere else can never silently vanish from the storefront.
+  const grouped = Object.fromEntries(
+    PRODUCT_CATEGORIES.map((category) => [
+      category,
+      sortedProducts.filter((p) => resolveProductCategory(p.category) === category),
+    ])
+  ) as GroupedProducts;
 
   return { products: sortedProducts, grouped, loading, error };
 }

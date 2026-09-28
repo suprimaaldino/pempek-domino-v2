@@ -70,7 +70,15 @@ export default function AdminDashboard() {
 
       const chartPromise = async () => {
         const sevenDaysAgo = startOfDay(subDays(today, 6));
-        const qWeek = query(ordersRef, where('createdAt', '>=', Timestamp.fromDate(sevenDaysAgo)));
+        // Bounded: the chart only renders 7 daily buckets, so reading the
+        // entire week of orders without a cap only inflates Firestore reads
+        // (billed per document) as history grows.
+        const qWeek = query(
+          ordersRef,
+          where('createdAt', '>=', Timestamp.fromDate(sevenDaysAgo)),
+          orderBy('createdAt', 'desc'),
+          limit(500)
+        );
         const snapWeek = await getDocs(qWeek);
 
         const dayMap = new Map<string, number>();

@@ -11,24 +11,40 @@ import { ProductCard } from '@/components/order/ProductCard';
 import type { Product } from '@/types';
 import { Timestamp } from 'firebase/firestore';
 
-// Mock the order store
+// Mock the order store.
+//
+// ProductCard subscribes with per-field selectors (so that adding an item only
+// re-renders that one card), so the mock must honour the selector argument
+// instead of returning the whole state.
 const mockUpdateQuantity = jest.fn();
 const mockAddItem = jest.fn();
 
+interface MockItem {
+  productId: string;
+  quantity: number;
+}
+let mockItems: MockItem[] = [];
+
 jest.mock('@/store/orderStore', () => ({
-  useOrderStore: jest.fn(() => ({
-    items: [],
-    updateQuantity: mockUpdateQuantity,
-    addItem: mockAddItem,
-  })),
+  useOrderStore: (selector?: (state: unknown) => unknown) => {
+    const state = {
+      items: mockItems,
+      updateQuantity: mockUpdateQuantity,
+      addItem: mockAddItem,
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 
 // Mock next/image — strip next-only props (fill is boolean, invalid on <img>)
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: ({ fill, priority, ...props }: any) => {
+  default: ({ fill: _fill, priority: _priority, ...props }: any) => {
+    // `alt` arrives via the spread, so a11y cannot verify it statically.
+    /* eslint-disable jsx-a11y/alt-text */
     // eslint-disable-next-line @next/next/no-img-element
     return <img {...props} />;
+    /* eslint-enable jsx-a11y/alt-text */
   },
 }));
 
@@ -47,12 +63,7 @@ const mockProduct: Product = {
 describe('ProductCard Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    const useOrderStore = jest.requireMock('@/store/orderStore').useOrderStore;
-    useOrderStore.mockReturnValue({
-      items: [],
-      updateQuantity: mockUpdateQuantity,
-      addItem: mockAddItem,
-    });
+    mockItems = [];
   });
 
   test('renders product information correctly', () => {
@@ -94,26 +105,14 @@ describe('ProductCard Component', () => {
   });
 
   test('displays quantity badge when item is in cart', () => {
-    // Override the mock for this test
-    const useOrderStore = jest.requireMock('@/store/orderStore').useOrderStore;
-    useOrderStore.mockReturnValue({
-      items: [{ productId: 'prod-1', quantity: 3 }],
-      updateQuantity: mockUpdateQuantity,
-      addItem: mockAddItem,
-    });
-
+    mockItems = [{ productId: 'prod-1', quantity: 3 }];
     render(<ProductCard product={mockProduct} />);
 
     expect(screen.getAllByText('3')[0]).toBeInTheDocument();
   });
 
   test('calls updateQuantity when incrementing existing item', () => {
-    const useOrderStore = jest.requireMock('@/store/orderStore').useOrderStore;
-    useOrderStore.mockReturnValue({
-      items: [{ productId: 'prod-1', quantity: 2 }],
-      updateQuantity: mockUpdateQuantity,
-      addItem: mockAddItem,
-    });
+    mockItems = [{ productId: 'prod-1', quantity: 2 }];
 
     render(<ProductCard product={mockProduct} />);
 
@@ -125,12 +124,7 @@ describe('ProductCard Component', () => {
   });
 
   test('calls updateQuantity when decrementing item', () => {
-    const useOrderStore = jest.requireMock('@/store/orderStore').useOrderStore;
-    useOrderStore.mockReturnValue({
-      items: [{ productId: 'prod-1', quantity: 2 }],
-      updateQuantity: mockUpdateQuantity,
-      addItem: mockAddItem,
-    });
+    mockItems = [{ productId: 'prod-1', quantity: 2 }];
 
     render(<ProductCard product={mockProduct} />);
 
@@ -141,12 +135,7 @@ describe('ProductCard Component', () => {
   });
 
   test('displays correct quantity in controls', () => {
-    const useOrderStore = jest.requireMock('@/store/orderStore').useOrderStore;
-    useOrderStore.mockReturnValue({
-      items: [{ productId: 'prod-1', quantity: 5 }],
-      updateQuantity: mockUpdateQuantity,
-      addItem: mockAddItem,
-    });
+    mockItems = [{ productId: 'prod-1', quantity: 5 }];
 
     render(<ProductCard product={mockProduct} />);
 
@@ -154,12 +143,7 @@ describe('ProductCard Component', () => {
   });
 
   test('applies correct border styling when item is in cart', () => {
-    const useOrderStore = jest.requireMock('@/store/orderStore').useOrderStore;
-    useOrderStore.mockReturnValue({
-      items: [{ productId: 'prod-1', quantity: 1 }],
-      updateQuantity: mockUpdateQuantity,
-      addItem: mockAddItem,
-    });
+    mockItems = [{ productId: 'prod-1', quantity: 1 }];
 
     const { container } = render(<ProductCard product={mockProduct} />);
     const card = container.firstChild as HTMLElement;

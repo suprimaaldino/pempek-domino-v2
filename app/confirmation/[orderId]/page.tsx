@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle2, MessageCircle, RefreshCcw, Truck, MapPin, Clock, ClipboardList, Copy, Check, XCircle } from 'lucide-react';
 import { getBusinessSettings } from '@/lib/firestore';
+import { saveSavedOrder } from '@/lib/saved-orders';
+import { cancelOrderAsGuest } from '@/lib/cancel-order';
 import { formatRupiah, formatDateId, formatWhatsApp, generateWhatsAppLink, PAYMENT_METHOD_LABELS, DELIVERY_METHOD_LABELS } from '@/lib/utils';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/ui/Badge';
 import { SkeletonCard } from '@/components/ui/Skeleton';
@@ -11,6 +13,12 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
 import type { Order, BusinessSettings } from '@/types';
+
+/**
+ * Used only when the store's own settings have not loaded. Keep in sync with
+ * `settings/business.whatsappNumber` in Firestore, which is admin-editable.
+ */
+const FALLBACK_WHATSAPP_NUMBER = '6281776400024';
 
 export default function ConfirmationPage() {
   /** Route param is the public orderNumber (e.g. PD-20260825-001-X7K9), not the Firestore doc id. */
@@ -56,16 +64,14 @@ export default function ConfirmationPage() {
             deliveryAddress: null,
           } as unknown as Order;
           setOrder(ord);
-          // Save order to localStorage for easy access on my-orders page
-          try {
-            const saved = JSON.parse(localStorage.getItem('pempek-domino-orders') || '[]') as Array<{ orderNumber: string; orderId: string; customerName: string }>;
-            const exists = saved.some(s => s.orderNumber === ord.orderNumber);
-            if (!exists) {
-              saved.push({ orderNumber: ord.orderNumber, orderId: ord.orderNumber, customerName: ord.customerName });
-              if (saved.length > 20) saved.splice(0, saved.length - 20);
-              localStorage.setItem('pempek-domino-orders', JSON.stringify(saved));
-            }
-          } catch { /* localStorage may be unavailable */ }
+          // Remember this order on this device for quick re-checks. The
+          // WhatsApp number is deliberately NOT added here: the public lookup
+          // route redacts it, so /order records it at creation time instead.
+          saveSavedOrder({
+            orderNumber: ord.orderNumber,
+            orderId: ord.orderNumber,
+            customerName: ord.customerName,
+          });
         } else if (orderRes.status === 404) {
           setOrder(null);
         } else {
@@ -107,9 +113,7 @@ export default function ConfirmationPage() {
     if (!order || !window.confirm('Yakin ingin membatalkan pesanan ini?')) return;
     setCancelling(true);
     try {
-      const res = await fetch(`/api/order/${encodeURIComponent(order.orderNumber)}/cancel`, { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal membatalkan pesanan');
+      await cancelOrderAsGuest(order.orderNumber);
       setOrder({ ...order, status: 'cancelled' });
       toastSuccess('Pesanan berhasil dibatalkan');
     } catch (err) {
@@ -125,7 +129,9 @@ export default function ConfirmationPage() {
       `No. Pesanan: ${ord.orderNumber}`,
       ``,
       `👤 *Pemesan:* ${ord.customerName}`,
-      `📱 *WhatsApp:* ${formatWhatsApp(ord.whatsappNumber)}`,
+      // The public lookup API redacts the number, so omit the line entirely
+      // rather than sending "WhatsApp: " with nothing after it.
+      ord.whatsappNumber ? `📱 *WhatsApp:* ${formatWhatsApp(ord.whatsappNumber)}` : '',
       ``,
       `📦 *Detail Pesanan:*`,
       ...ord.items.map((i) => `* ${i.productName} x${i.quantity} = ${formatRupiah(i.subtotal)}`),
@@ -179,7 +185,7 @@ export default function ConfirmationPage() {
     );
   }
 
-  const waPhone = settings?.whatsappNumber ?? '6281776400024';
+  const waPhone = settings?.whatsappNumber || FALLBACK_WHATSAPP_NUMBER;
   const waLink = generateWhatsAppLink(waPhone, buildWhatsAppMessage(order));
 
   return (

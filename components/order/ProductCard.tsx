@@ -11,9 +11,13 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { items, updateQuantity, addItem } = useOrderStore();
-  const cartItem = items.find((i) => i.productId === product.id);
-  const qty = cartItem?.quantity ?? 0;
+  // Per-product selectors: the whole list of cards renders this component, so
+  // subscribing to the entire store would re-render every card on each change.
+  const qty = useOrderStore(
+    (s) => s.items.find((i) => i.productId === product.id)?.quantity ?? 0
+  );
+  const updateQuantity = useOrderStore((s) => s.updateQuantity);
+  const addItem = useOrderStore((s) => s.addItem);
 
   const handleAdd = () => {
     if (qty === 0) {

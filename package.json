@@ -9,7 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -17,7 +17,10 @@
     "test:functional": "jest __tests__/functional",
     "test:security": "jest __tests__/security",
     "test:integration": "jest __tests__/integration",
-    "test:ci": "jest --ci --coverage --maxWorkers=2"
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -25,7 +28,7 @@
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
-    "dompurify": "^3.2.4",
+    "dompurify": "^3.4.16",
     "firebase": "^12.14.0",
     "firebase-admin": "^14.3.0",
     "lucide-react": "^1.17.0",
@@ -40,6 +43,7 @@
   },
   "devDependencies": {
     "@google-cloud/storage": "^8.0.1",
+    "@playwright/test": "^1.63.0",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
     "@testing-library/user-event": "^14.5.2",

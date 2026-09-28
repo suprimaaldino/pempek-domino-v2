@@ -51,20 +51,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate username — generic message to prevent username enumeration
+    // Validate credentials — both branches must cost the same.
+    //
+    // Skipping bcrypt on a bad username would make a wrong username respond in
+    // ~1ms while a wrong password takes ~100ms, which is enough to enumerate
+    // ADMIN_USERNAME. Always run the comparison, using a dummy hash when the
+    // username does not match, and return one generic message either way.
+    const DUMMY_HASH = '$2a$12$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123';
     const usernameValid = username === expectedUsername;
-    if (!usernameValid) {
-      console.log('[AUTH] Failed login attempt from IP:', ip);
-      return NextResponse.json(
-        { error: 'Kredensial tidak valid.' },
-        { status: 401 }
-      );
-    }
+    const passwordValid = await bcrypt.compare(
+      password,
+      usernameValid ? passwordHash : DUMMY_HASH
+    );
 
-    // Validate password with bcrypt — generic message
-    const passwordValid = await bcrypt.compare(password, passwordHash);
-    if (!passwordValid) {
-      console.log('[AUTH] Failed login attempt (wrong password) from IP:', ip);
+    if (!usernameValid || !passwordValid) {
+      console.warn('[AUTH] Failed login attempt from IP:', ip);
       return NextResponse.json(
         { error: 'Kredensial tidak valid.' },
         { status: 401 }

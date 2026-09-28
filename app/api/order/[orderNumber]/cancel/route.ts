@@ -2,15 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { normalizePhone } from '@/lib/utils';
 
 /**
  * Public API route for order cancellation by order number.
- * Only allows cancellation of orders with 'pending' status.
- * Rate limited to prevent abuse.
+ *
+ * Authorization: guests have no session, so the order number alone is NOT
+ * sufficient. The caller must also present the WhatsApp number used for the
+ * order. The public order number is guessable in its date/sequence parts, so
+ * requiring a second 9–12 digit secret prevents anyone from cancelling other
+ * customers' pending orders. Only `pending` orders can be cancelled.
  */
 const MAX_CANCEL = 5;
 const WINDOW_MS = 60 * 1000;
 const RATE_BUCKET = 'order-cancel';
+
+// Generic message: must not reveal whether the order exists.
+const UNAUTHORIZED = { error: 'Nomor pesanan atau nomor WhatsApp tidak sesuai.' };
 
 export async function POST(
   req: NextRequest,
@@ -35,6 +43,18 @@ export async function POST(
   }
 
   try {
+    // Read the caller's WhatsApp number. Required for authorization.
+    let providedPhone = '';
+    try {
+      const body = (await req.json()) as { whatsappNumber?: unknown };
+      if (typeof body?.whatsappNumber === 'string') providedPhone = body.whatsappNumber;
+    } catch {
+      // Empty/unparseable body → treated as missing below.
+    }
+    if (!providedPhone) {
+      return NextResponse.json(UNAUTHORIZED, { status: 403 });
+    }
+
     // Look up orderId from orderLookups collection
     const normalized = orderNumber.toUpperCase().trim();
     const lookupSnap = await adminDb.collection('orderLookups').doc(normalized).get();
@@ -66,6 +86,14 @@ export async function POST(
     }
 
     const orderData = orderSnap.data()!;
+
+    // Ownership check — constant work for both match and mismatch.
+    const orderPhone = typeof orderData.whatsappNumber === 'string'
+      ? normalizePhone(orderData.whatsappNumber)
+      : '';
+    if (!orderPhone || orderPhone !== normalizePhone(providedPhone)) {
+      return NextResponse.json(UNAUTHORIZED, { status: 403 });
+    }
 
     if (orderData.status !== 'pending') {
       return NextResponse.json(

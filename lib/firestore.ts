@@ -29,14 +29,17 @@ import type {
   PaymentConfig,
   BusinessSettings,
   OrderStatus,
-  ProductCategory,
 } from '@/types';
+import { resolveProductCategory } from '@/types';
 import { format } from 'date-fns';
 
 const ProductSchema = z.object({
   id: z.string(),
   name: z.string(),
-  category: z.string(),
+  // Normalize legacy/typo categories (e.g. `besar` → `kecil`) at the parse
+  // boundary so every reader (storefront grouping, admin menu, reports) sees a
+  // value that is actually in PRODUCT_CATEGORIES.
+  category: z.string().transform(resolveProductCategory),
   price: z.number(),
   imageUrl: z.string(),
   isActive: z.boolean(),
@@ -85,7 +88,7 @@ const CustomerSchema = z.object({
   createdAt: z.any(),
 });
 
-function parseProduct(id: string, data: DocumentData): Product | null {
+export function parseProduct(id: string, data: DocumentData): Product | null {
   const result = ProductSchema.safeParse({ id, ...data });
   return result.success ? result.data as Product : null;
 }
@@ -477,18 +480,20 @@ export async function updateBusinessSettings(
 // ─── Seed Data ────────────────────────────────────────────────────────────────
 
 const seedProducts: Array<Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'imageUrl'>> = [
-  { name: 'Pempek Lenjer Kecil', category: 'kecil' as ProductCategory, price: 5000, isActive: true },
-  { name: 'Pempek Adaan', category: 'kecil' as ProductCategory, price: 5000, isActive: true },
-  { name: 'Pempek Telor', category: 'kecil' as ProductCategory, price: 5000, isActive: true },
-  { name: 'Pempek Kulit', category: 'kecil' as ProductCategory, price: 5000, isActive: true },
-  { name: 'Pempek Lenjer Besar', category: 'besar' as ProductCategory, price: 15000, isActive: true },
-  { name: 'Pempek Kapsel', category: 'besar' as ProductCategory, price: 15000, isActive: true },
-  { name: 'Pempek Lenggang', category: 'besar' as ProductCategory, price: 15000, isActive: true },
-  { name: 'Tekwan', category: 'besar' as ProductCategory, price: 13000, isActive: true },
-  { name: 'Mix Isi 5', category: 'paket' as ProductCategory, price: 22000, isActive: true },
-  { name: 'Mix Isi 10', category: 'paket' as ProductCategory, price: 44000, isActive: true },
-  { name: 'Mix Isi 15', category: 'paket' as ProductCategory, price: 66000, isActive: true },
-  { name: 'Mix Isi 20', category: 'paket' as ProductCategory, price: 88000, isActive: true },
+  { name: 'Pempek Lenjer Kecil', category: 'kecil', price: 5000, isActive: true },
+  { name: 'Pempek Adaan', category: 'kecil', price: 5000, isActive: true },
+  { name: 'Pempek Telor', category: 'kecil', price: 5000, isActive: true },
+  { name: 'Pempek Kulit', category: 'kecil', price: 5000, isActive: true },
+  // formerly seeded as the legacy `besar` category, which is not part of
+  // PRODUCT_CATEGORIES — those products were invisible on the storefront.
+  { name: 'Pempek Lenjer Besar', category: 'kecil', price: 15000, isActive: true },
+  { name: 'Pempek Kapsel', category: 'kecil', price: 15000, isActive: true },
+  { name: 'Pempek Lenggang', category: 'kecil', price: 15000, isActive: true },
+  { name: 'Tekwan', category: 'kecil', price: 13000, isActive: true },
+  { name: 'Mix Isi 5', category: 'paket', price: 22000, isActive: true },
+  { name: 'Mix Isi 10', category: 'paket', price: 44000, isActive: true },
+  { name: 'Mix Isi 15', category: 'paket', price: 66000, isActive: true },
+  { name: 'Mix Isi 20', category: 'paket', price: 88000, isActive: true },
 ];
 
 export async function seedProductsIfEmpty(): Promise<void> {

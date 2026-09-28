@@ -16,12 +16,15 @@ export function sanitizeInput(input: string): string {
 
 /**
  * Sanitize and validate a name field.
- * Only allows letters, numbers, spaces, and common punctuation.
+ * Keeps letters from any script (\p{L}), digits, spaces and common punctuation.
+ * ASCII-only filtering would silently corrupt names such as "José" → "Jos".
  */
 export function sanitizeName(name: string): string {
   const sanitized = sanitizeInput(name);
-  // Remove any characters that aren't letters, numbers, spaces, or common punctuation
-  return sanitized.replace(/[^a-zA-Z0-9\s\-'\.]/g, '').trim();
+  return sanitized
+    .replace(/[^\p{L}\p{N}\s\-'.]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**
@@ -33,12 +36,15 @@ export function sanitizePhone(phone: string): string {
 }
 
 /**
- * Sanitize address - allows letters, numbers, spaces, and address-related punctuation.
+ * Sanitize address - allows letters (any script), numbers, spaces, and
+ * address-related punctuation.
  */
 export function sanitizeAddress(address: string): string {
   const sanitized = sanitizeInput(address);
-  // Allow common address characters
-  return sanitized.replace(/[^a-zA-Z0-9\s,\.\-\/#()]/g, '').trim();
+  return sanitized
+    .replace(/[^\p{L}\p{N}\s,\.\-\/#()]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**
@@ -46,8 +52,10 @@ export function sanitizeAddress(address: string): string {
  */
 export function sanitizeNotes(notes: string): string {
   const sanitized = sanitizeInput(notes);
-  // Allow common punctuation for notes
-  return sanitized.replace(/[^a-zA-Z0-9\s,\.\-!?()@#$%&*]/g, '').trim();
+  return sanitized
+    .replace(/[^\p{L}\p{N}\s,\.\-!?()@#$%&*]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 interface OrderData {

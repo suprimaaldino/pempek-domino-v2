@@ -39,7 +39,7 @@ function computeSubtotal(items: CartItem[]): number {
 
 export const useOrderStore = create<OrderState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       items: [],
       customerName: '',
       whatsappNumber: '',

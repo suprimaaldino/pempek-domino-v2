@@ -12,7 +12,9 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
-  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
+  // `*.spec.ts` matches Jest's default testMatch, so Playwright specs under
+  // /e2e must be excluded or `npm test` tries to run them and fails.
+  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/', '<rootDir>/e2e/'],
   collectCoverageFrom: [
     'lib/**/*.{js,jsx,ts,tsx}',
     'hooks/**/*.{js,jsx,ts,tsx}',
@@ -35,6 +37,26 @@ const customJestConfig = {
       branches: 100,
       functions: 75,
       lines: 80,
+    },
+    // Rate limiting and the guest order cache are pure, fully testable
+    // modules — hold them near-complete so regressions cannot slip through.
+    './lib/rate-limit.ts': {
+      statements: 100,
+      branches: 95,
+      functions: 100,
+      lines: 100,
+    },
+    './lib/saved-orders.ts': {
+      statements: 100,
+      branches: 95,
+      functions: 100,
+      lines: 100,
+    },
+    './lib/server-auth.ts': {
+      statements: 95,
+      branches: 90,
+      functions: 100,
+      lines: 95,
     },
   },
 };

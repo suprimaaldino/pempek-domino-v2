@@ -5,7 +5,7 @@
  * Tests: hooks/useProducts.ts, hooks/useLocalStorage.ts
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 
 // Mock Firestore
 const mockUnsubscribe = jest.fn();

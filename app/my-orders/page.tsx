@@ -17,6 +17,9 @@ import {
 } from 'lucide-react';
 import { getBusinessSettings } from '@/lib/firestore';
 import { getFirebaseToken } from '@/lib/auth';
+import { getSavedOrders, removeSavedOrder } from '@/lib/saved-orders';
+import type { SavedOrder } from '@/lib/saved-orders';
+import { cancelOrderAsGuest } from '@/lib/cancel-order';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { useAuthStore } from '@/store/authStore';
 import { Input } from '@/components/ui/Input';
@@ -27,22 +30,6 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { useToast } from '@/components/ui/Toast';
 import { formatRupiah, formatDateId, DELIVERY_METHOD_LABELS, cn } from '@/lib/utils';
 import type { Order, BusinessSettings } from '@/types';
-
-// ─── Saved Orders (localStorage) ──────────────────────────────────────────────
-
-interface SavedOrder {
-  orderNumber: string;
-  orderId: string;
-  customerName: string;
-}
-
-function getSavedOrders(): SavedOrder[] {
-  try {
-    return JSON.parse(localStorage.getItem('pempek-domino-orders') || '[]');
-  } catch {
-    return [];
-  }
-}
 
 // ─── Order Detail Card ─────────────────────────────────────────────────────────
 
@@ -63,9 +50,7 @@ function OrderDetailCard({
     if (!window.confirm('Yakin ingin membatalkan pesanan ini?')) return;
     setCancelling(true);
     try {
-      const res = await fetch(`/api/order/${encodeURIComponent(order.orderNumber)}/cancel`, { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal membatalkan pesanan');
+      await cancelOrderAsGuest(order.orderNumber);
       toastSuccess('Pesanan berhasil dibatalkan');
       onCancelled?.();
     } catch (err) {
@@ -314,9 +299,7 @@ export default function MyOrdersPage() {
           setOrder(null);
           setError('');
           // Remove from saved if not found
-          const updated = getSavedOrders().filter(s => s.orderNumber !== orderNum);
-          localStorage.setItem('pempek-domino-orders', JSON.stringify(updated));
-          setSavedOrders(updated);
+          setSavedOrders(removeSavedOrder(orderNum));
         } else {
           throw new Error('Failed to fetch');
         }

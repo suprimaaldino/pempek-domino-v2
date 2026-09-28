@@ -22,6 +22,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useOrderStore } from '@/store/orderStore';
 import { useProducts } from '@/hooks/useProducts';
 import { getPaymentConfig, getBusinessSettings, getOrCreateUser, updateUserPhone } from '@/lib/firestore';
+import { saveSavedOrder } from '@/lib/saved-orders';
 import { getCurrentUser, getFirebaseToken, signInWithGoogleCustomer, logoutCustomer } from '@/lib/auth';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { useAuthStore } from '@/store/authStore';
@@ -255,14 +256,15 @@ export default function OrderPage() {
 
       clearCart();
 
-      // Save order to localStorage for easy access on my-orders page
-      try {
-        const saved = JSON.parse(localStorage.getItem('pempek-domino-orders') || '[]') as Array<{ orderNumber: string; orderId: string; customerName: string }>;
-        saved.push({ orderNumber, orderId, customerName: sanitizedData.customerName });
-        // Keep only last 20 orders per device
-        if (saved.length > 20) saved.splice(0, saved.length - 20);
-        localStorage.setItem('pempek-domino-orders', JSON.stringify(saved));
-      } catch { /* localStorage may be unavailable */ }
+      // Remember this order on this device. The WhatsApp number is recorded
+      // here (not on the confirmation page) because the public lookup API
+      // redacts it, and cancelling later requires it as proof of ownership.
+      saveSavedOrder({
+        orderNumber,
+        orderId,
+        customerName: sanitizedData.customerName,
+        whatsappNumber: sanitizedData.whatsappNumber,
+      });
 
       toastSuccess('Pesanan berhasil dibuat!');
       // Navigate by orderNumber so confirmation can use the public lookup API

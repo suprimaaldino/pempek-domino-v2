@@ -15,6 +15,12 @@
  */
 
 import { NextRequest } from 'next/server';
+import fs from 'fs';
+import path from 'path';
+import bcrypt from 'bcryptjs';
+import { middleware, config as middlewareConfig } from '@/middleware';
+import { POST as loginPost } from '@/app/api/admin/login/route';
+import { POST as logoutPost } from '@/app/api/admin/logout/route';
 
 // `firebase-admin/auth` is never imported (it pulls ESM-only `jose`, which Jest
 // cannot parse and Vercel's Rust runtime cannot require). Custom claims are
@@ -53,7 +59,7 @@ function makeRequest(pathname: string, cookies: Record<string, string> = {}): Ne
 // ─── Login API ───────────────────────────────────────────────────────────────
 
 describe('POST /api/admin/login', () => {
-  let POST: typeof import('@/app/api/admin/login/route').POST;
+  const POST = loginPost;
 
   beforeAll(() => {
     process.env.ADMIN_USERNAME = 'testadmin';
@@ -61,8 +67,6 @@ describe('POST /api/admin/login', () => {
       '$2a$12$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345';
     process.env.ADMIN_EMAIL = 'admin@test.local';
     process.env.NEXT_PUBLIC_FIREBASE_API_KEY = 'test-api-key';
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    POST = require('@/app/api/admin/login/route').POST;
   });
 
   test('rejects empty body with 400', async () => {
@@ -100,7 +104,6 @@ describe('POST /api/admin/login', () => {
 
   test('rejects wrong password with 401 and same generic message', async () => {
     // bcrypt hash of "correct-password" — login attempt uses a different password
-    const bcrypt = await import('bcryptjs');
     const hash = bcrypt.hashSync('correct-password', 4);
     process.env.ADMIN_PASSWORD_HASH = hash;
 
@@ -114,15 +117,32 @@ describe('POST /api/admin/login', () => {
     const body = await res.json();
     expect(body.error).toBe('Kredensial tidak valid.');
   });
+
+  // Timing-attack regression: returning early on a wrong username would make
+  // that path ~100x faster than the bcrypt path and leak ADMIN_USERNAME.
+  // Asserted structurally (bcrypt.compare must run) rather than by measuring
+  // elapsed time, which would be flaky.
+  test('runs bcrypt on a wrong username so the two failures cost the same', async () => {
+    const spy = jest.spyOn(bcrypt, 'compare');
+    const req = new NextRequest('http://localhost:3000/api/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({ username: 'not-the-admin', password: 'whatever' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    const res = await loginPost(req);
+
+    expect(res.status).toBe(401);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith('whatever', expect.stringMatching(/^\$2[aby]\$/));
+    spy.mockRestore();
+  });
 });
 
 // ─── Middleware security headers ─────────────────────────────────────────────
 
 describe('Middleware security headers', () => {
   test('middleware matcher covers /admin and /api', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require('@/middleware');
-    expect(mod.config.matcher).toEqual(['/admin/:path*', '/api/:path*']);
+    expect(middlewareConfig.matcher).toEqual(['/admin/:path*', '/api/:path*']);
   });
 
   test('PROTECTED_PATHS includes /admin', async () => {
@@ -131,8 +151,6 @@ describe('Middleware security headers', () => {
     process.env.NEXT_PUBLIC_FIREBASE_API_KEY = undefined as unknown as string;
     process.env.ADMIN_EMAIL = undefined as unknown as string;
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { middleware } = require('@/middleware');
     const req = makeRequest('/admin/dashboard');
     const res = await middleware(req);
     // redirect response — NextResponse.redirect
@@ -149,9 +167,6 @@ describe('Middleware security headers', () => {
 describe('Admin cookie security contract', () => {
   test('login route sets HttpOnly SameSite=strict cookie', async () => {
     // Read route source to assert cookie flags remain present (regression guard).
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const fs = require('fs');
-    const path = require('path');
     const src = fs.readFileSync(
       path.join(process.cwd(), 'app/api/admin/login/route.ts'),
       'utf8'
@@ -164,9 +179,7 @@ describe('Admin cookie security contract', () => {
   });
 
   test('logout clears the auth cookie', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { POST } = require('@/app/api/admin/logout/route');
-    const res = await POST();
+    const res = await logoutPost();
     expect(res.status).toBe(200);
     const cookie = res.headers.get('set-cookie') || '';
     // Cookie name is firebaseAuthToken → serialized lowercased

@@ -22,7 +22,7 @@ import { useToast } from '@/components/ui/Toast';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { Product, ProductCategory } from '@/types';
-import { PRODUCT_CATEGORIES } from '@/types';
+import { PRODUCT_CATEGORIES, resolveProductCategory } from '@/types';
 
 const CATEGORIES: ProductCategory[] = [...PRODUCT_CATEGORIES];
 
@@ -153,7 +153,7 @@ export default function MenuManagementPage() {
       ) : products.length > 0 ? (
         <div className="space-y-10">
           {CATEGORIES.map(cat => {
-            const catProds = products.filter(p => p.category === cat);
+            const catProds = products.filter(p => resolveProductCategory(p.category) === cat);
             if (catProds.length === 0) return null;
 
             return (
